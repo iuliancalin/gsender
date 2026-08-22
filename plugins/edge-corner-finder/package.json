@@ -1,0 +1,24 @@
+{
+  "name": "edge-corner-finder",
+  "version": "1.0.0",
+  "description": "3D Touch Probe Edge & Corner Finder with Live Visuals & Jog Controls for gSender 1.7+",
+  "main": "index.html",
+  "author": "Sienci Labs Community",
+  "license": "MIT",
+  "type": "module",
+  "icon": "icon.svg",
+  "gsender": {
+    "id": "edge-corner-finder",
+    "title": "3D Probe Edge & Corner Finder",
+    "description": "Accurately probe stock edges, corners, and Z surface with live 60fps diagram animations, live probe connectivity testing, and integrated jog controls.",
+    "category": "Probing",
+    "version": "1.0.0",
+    "entry": "index.html",
+    "permissions": [
+      "gcode:send",
+      "machine:status",
+      "machine:jog",
+      "machine:zero"
+    ]
+  }
+}

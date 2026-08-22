@@ -1,0 +1,31 @@
+{
+  "id": "community.material-center-finder",
+  "name": "Material Center Finder",
+  "description": "5-point touch probing tool to automatically find and zero the center of rectangular material.",
+  "version": "1.0.0",
+  "engine": ">=1.6.0",
+  "ui": {
+    "entry": "ui/index.html",
+    "contributions": [
+      {
+        "slot": "tools-page",
+        "route": "material-center-finder",
+        "label": "Material Center Finder"
+      }
+    ]
+  },
+  "capabilities": {
+    "requestTypes": [
+      "machine:command",
+      "machine:get:context",
+      "workspace:get:state"
+    ],
+    "topics": [
+      "workspace"
+    ],
+    "allowedFunctions": [
+      "gcode",
+      "useWorkspaceState"
+    ]
+  }
+}

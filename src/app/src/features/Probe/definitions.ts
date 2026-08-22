@@ -136,6 +136,12 @@ export interface Actions {
     openBoreCenterModal: () => void;
     closeBoreCenterModal: () => void;
     runBoreCenterMacro: (gcode: string) => void;
+    openEdgeCornerModal: () => void;
+    closeEdgeCornerModal: () => void;
+    runEdgeCornerMacro: (gcode: string) => void;
+    openCalibrationModal: () => void;
+    closeCalibrationModal: () => void;
+    runCalibrationMacro: (gcode: string) => void;
     changeProbeCommand: (value: string) => void;
     changeTouchPlateType: (value: TOUCHPLATE_TYPES_T) => void;
     toggleUseTLO: () => void;
@@ -177,4 +183,5 @@ export interface State {
     direction: number;
     probeType: PROBE_TYPES_T;
     connectivityTest: boolean;
+    probePinStatus?: boolean;
 }

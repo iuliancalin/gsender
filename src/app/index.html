@@ -1,9 +1,16 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" style="background-color: #18181c; color: #f1f5f9;">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>gSender</title>
+        <style>
+            html, body, #app {
+                background-color: #18181c;
+                margin: 0;
+                padding: 0;
+            }
+        </style>
         <link
             rel="stylesheet"
             crossorigin
@@ -19,12 +26,12 @@
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <!--app-head-->
     </head>
-    <body>
+    <body style="background-color: #18181c; color: #f1f5f9;">
         <script type="module" src="./src/entry-client.tsx"></script>
         <script>
             var global = global || window;
         </script>
-        <div id="app"><!--app-html--></div>
+        <div id="app" style="background-color: #18181c;"><!--app-html--></div>
         <!--store-data-outlet-->
     </body>
 </html>

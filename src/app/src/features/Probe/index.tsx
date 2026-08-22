@@ -40,6 +40,8 @@ import Probe from './Probe';
 import RunProbe from './RunProbe';
 import MaterialCenterFinderModal from './MaterialCenterFinderModal';
 import BoreCenterFinderModal from './BoreCenterFinderModal';
+import EdgeCornerFinderModal from './EdgeCornerFinderModal';
+import ProbeCalibrationModal from './ProbeCalibrationModal';
 import {
     // Units
     METRIC_UNITS,
@@ -114,6 +116,8 @@ const ProbeWidget = () => {
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [materialCenterModalOpen, setMaterialCenterModalOpen] = useState(false);
     const [boreCenterModalOpen, setBoreCenterModalOpen] = useState(false);
+    const [edgeCornerModalOpen, setEdgeCornerModalOpen] = useState(false);
+    const [calibrationModalOpen, setCalibrationModalOpen] = useState(false);
     // const [probeAxis, setProbeAxis] = useState<AXES_T>(config.get('probeAxis', 'Z'));
     const [probeCommand, setProbeCommand] = useState<string>(
         config.get('probeCommand', 'G38.2'),
@@ -277,6 +281,24 @@ const ProbeWidget = () => {
             setBoreCenterModalOpen(false);
         },
         runBoreCenterMacro: (gcode: string): void => {
+            controller.command('gcode:safe', gcode, 'G21');
+        },
+        openEdgeCornerModal: (): void => {
+            setEdgeCornerModalOpen(true);
+        },
+        closeEdgeCornerModal: (): void => {
+            setEdgeCornerModalOpen(false);
+        },
+        runEdgeCornerMacro: (gcode: string): void => {
+            controller.command('gcode:safe', gcode, 'G21');
+        },
+        openCalibrationModal: (): void => {
+            setCalibrationModalOpen(true);
+        },
+        closeCalibrationModal: (): void => {
+            setCalibrationModalOpen(false);
+        },
+        runCalibrationMacro: (gcode: string): void => {
             controller.command('gcode:safe', gcode, 'G21');
         },
         changeProbeCommand: (value: string): void => {
@@ -666,6 +688,7 @@ const ProbeWidget = () => {
         direction: direction,
         probeType: probeType,
         connectivityTest: connectivityTest,
+        probePinStatus: probePinStatus,
     };
 
     return (
@@ -677,11 +700,26 @@ const ProbeWidget = () => {
                     isOpen={materialCenterModalOpen}
                     onClose={() => actions.closeMaterialCenterModal()}
                     onRunGcode={(gcode) => actions.runMaterialCenterMacro(gcode)}
+                    connectivityTest={connectivityTest}
                 />
                 <BoreCenterFinderModal
                     isOpen={boreCenterModalOpen}
                     onClose={() => actions.closeBoreCenterModal()}
                     onRunGcode={(gcode) => actions.runBoreCenterMacro(gcode)}
+                    connectivityTest={connectivityTest}
+                />
+                <EdgeCornerFinderModal
+                    isOpen={edgeCornerModalOpen}
+                    onClose={() => actions.closeEdgeCornerModal()}
+                    onRunGcode={(gcode) => actions.runEdgeCornerMacro(gcode)}
+                    connectivityTest={connectivityTest}
+                    onOpenCalibration={() => actions.openCalibrationModal()}
+                />
+                <ProbeCalibrationModal
+                    isOpen={calibrationModalOpen}
+                    onClose={() => actions.closeCalibrationModal()}
+                    onRunGcode={(gcode) => actions.runCalibrationMacro(gcode)}
+                    connectivityTest={connectivityTest}
                 />
             </div>
         </>

@@ -1,7 +1,8 @@
 function parseLatestReadmeNotes(readme) {
     let re = /### (\d.\d.\d) \((.*)\)/;
 
-    const notes = readme.split('<summary>Expand to see all version notes</summary>')[1];
+    const parts = readme.split('<summary>Expand to see all version notes</summary>');
+    const notes = parts[1] || readme;
     const collectedNotes = [];
     let headerCount = 0;
 
@@ -24,12 +25,14 @@ function parseLatestReadmeNotes(readme) {
             currentVersion.version = match[1];
             currentVersion.date = match[2];
             currentVersion.notes = [];
-        } else {
+        } else if (currentVersion) {
             currentVersion.notes.push(line.replace('- ', ''));
         }
     }
 
-    collectedNotes.push(currentVersion);
+    if (currentVersion) {
+        collectedNotes.push(currentVersion);
+    }
     return collectedNotes;
 }
 

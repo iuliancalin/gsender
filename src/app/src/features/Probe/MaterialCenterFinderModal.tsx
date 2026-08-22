@@ -3,14 +3,17 @@ import ReactDOM from 'react-dom';
 import controller from 'app/lib/controller';
 import store from 'app/store';
 import { useWorkspaceState } from 'app/hooks/useWorkspaceState';
+import { useTypedSelector } from 'app/hooks/useTypedSelector';
 import { IMPERIAL_UNITS } from 'app/constants';
 import { in2mm, mm2in } from 'app/lib/units';
+import { ModalJogDrawer } from './ModalJogDrawer';
 import './MaterialCenterFinderModal.css';
 
 interface ModalProps {
     isOpen: boolean;
     onClose: () => void;
     onRunGcode: (gcode: string) => void;
+    connectivityTest?: boolean;
 }
 
 interface SettingInputProps {
@@ -21,6 +24,7 @@ interface SettingInputProps {
     step?: string;
     placeholder?: string;
     disabled?: boolean;
+    title?: string;
 }
 
 const SettingInput = React.memo(
@@ -32,10 +36,11 @@ const SettingInput = React.memo(
         step = '1',
         placeholder = '—',
         disabled,
+        title,
     }: SettingInputProps) => (
-        <div className="material-center-finder-input-field">
+        <div className="material-center-finder-input-field" title={title}>
             <label className="material-center-finder-input-label">{label}</label>
-            <div className="material-center-finder-input-wrapper">
+            <div className={`material-center-finder-input-wrapper ${disabled ? 'disabled' : ''}`}>
                 <input
                     type="number"
                     step={step}
@@ -47,6 +52,7 @@ const SettingInput = React.memo(
                     }}
                     className="material-center-finder-input"
                     disabled={disabled}
+                    title={title}
                 />
                 <span className="material-center-finder-input-unit">{unit}</span>
             </div>
@@ -58,16 +64,30 @@ const MaterialCenterFinderModal: React.FC<ModalProps> = ({
     isOpen,
     onClose,
     onRunGcode,
+    connectivityTest = false,
 }) => {
+    const { probePinStatus, activeState } = useTypedSelector((state) => ({
+        probePinStatus: state.controller.state.status?.pinState.P ?? false,
+        activeState: state.controller.state.status?.activeState ?? 'Idle',
+    }));
+    const isAlarm = activeState === 'Alarm' || activeState === 'Hold';
+    const [hasTriggered, setHasTriggered] = useState<boolean>(false);
+
+    useEffect(() => {
+        if (probePinStatus) {
+            setHasTriggered(true);
+        }
+    }, [probePinStatus]);
+
     const { units } = useWorkspaceState();
     const isImperial = units === IMPERIAL_UNITS;
 
     const lengthUnit = isImperial ? 'in' : 'mm';
     const feedUnit = isImperial ? 'in/min' : 'mm/min';
 
-    const getInitialTipDia = () => {
-        const stored = Number(store.get('workspace.probeTipDiameter', 2.0));
-        return isImperial ? Number(mm2in(stored).toFixed(3)) : stored;
+    const getTipDia = () => {
+        const storedMetric = Number(store.get('widgets.probe.tipDiameter3D', store.get('workspace.probeTipDiameter', 2.0))) || 2.0;
+        return isImperial ? Number(mm2in(storedMetric).toFixed(3)) : storedMetric;
     };
 
     const [sizeX, setSizeX] = useState<number | ''>('');
@@ -76,20 +96,13 @@ const MaterialCenterFinderModal: React.FC<ModalProps> = ({
     const [slowFeed, setSlowFeed] = useState<number>(isImperial ? 2.0 : 50.0);
     const [retractDist, setRetractDist] = useState<number>(isImperial ? 0.08 : 2.0);
     const [safeZ, setSafeZ] = useState<number>(isImperial ? 0.2 : 5.0);
-    const [tipDia, setTipDia] = useState<number | ''>(getInitialTipDia);
+    const [tipDia, setTipDia] = useState<number | ''>(getTipDia);
     const [isRunning, setIsRunning] = useState<boolean>(false);
     const [dialogState, setDialogState] = useState<'idle' | 'success' | 'failed'>('idle');
 
-    const handleTipDiaChange = (val: number | '') => {
-        setTipDia(val);
-        if (typeof val === 'number' && !isNaN(val) && val > 0) {
-            const metricVal = isImperial ? in2mm(val) : val;
-            store.set('workspace.probeTipDiameter', metricVal);
-        }
-    };
-
     useEffect(() => {
-        const storedMetric = Number(store.get('workspace.probeTipDiameter', 2.0));
+        const storedMetric = Number(store.get('widgets.probe.tipDiameter3D', store.get('workspace.probeTipDiameter', 2.0))) || 2.0;
+
         if (isImperial) {
             setFastFeed(6.0);
             setSlowFeed(2.0);
@@ -103,7 +116,8 @@ const MaterialCenterFinderModal: React.FC<ModalProps> = ({
             setSafeZ(5.0);
             setTipDia(storedMetric);
         }
-    }, [isImperial]);
+        setHasTriggered(false);
+    }, [isImperial, isOpen]);
     const isRunningRef = useRef<boolean>(false);
     const cancelRequestedRef = useRef<boolean>(false);
     const hasCompletedRef = useRef<boolean>(false);
@@ -119,14 +133,14 @@ const MaterialCenterFinderModal: React.FC<ModalProps> = ({
         setDialogState('success');
     };
 
-    // Serial & feeder event listener
+    // Serial, message & workflow event listener
     useEffect(() => {
         const handleSerialData = (data: any) => {
             let rawLine = '';
             if (typeof data === 'string') {
                 rawLine = data;
             } else if (data && typeof data === 'object') {
-                rawLine = data.line || data.data || JSON.stringify(data);
+                rawLine = data.line || data.data || data.message || JSON.stringify(data);
             }
 
             if (rawLine && rawLine.includes('MATERIAL_CENTER_DONE')) {
@@ -134,13 +148,11 @@ const MaterialCenterFinderModal: React.FC<ModalProps> = ({
             }
         };
 
-        const handleFeederEmpty = () => {
-            if (isRunningRef.current && !cancelRequestedRef.current && !hasCompletedRef.current) {
-                setTimeout(() => {
-                    if (isRunningRef.current && !cancelRequestedRef.current) {
-                        triggerSuccess();
-                    }
-                }, 500);
+        const handleWorkflowState = (state: string) => {
+            if (state === 'idle' && isRunningRef.current && !cancelRequestedRef.current && !hasCompletedRef.current) {
+                if (Date.now() - runStartTimeRef.current > 2000) {
+                    triggerSuccess();
+                }
             }
         };
 
@@ -148,9 +160,8 @@ const MaterialCenterFinderModal: React.FC<ModalProps> = ({
             if (typeof controller.on === 'function') {
                 controller.on('serialport:read', handleSerialData);
                 controller.on('feeder:status', handleSerialData);
-            }
-            if (controller.feeder && typeof controller.feeder.on === 'function') {
-                controller.feeder.on('empty', handleFeederEmpty);
+                controller.on('message', handleSerialData);
+                controller.on('workflow:state', handleWorkflowState);
             }
         }
 
@@ -159,9 +170,13 @@ const MaterialCenterFinderModal: React.FC<ModalProps> = ({
                 if (typeof controller.off === 'function') {
                     controller.off('serialport:read', handleSerialData);
                     controller.off('feeder:status', handleSerialData);
-                }
-                if (controller.feeder && typeof controller.feeder.off === 'function') {
-                    controller.feeder.off('empty', handleFeederEmpty);
+                    controller.off('message', handleSerialData);
+                    controller.off('workflow:state', handleWorkflowState);
+                } else if (typeof (controller as any).removeListener === 'function') {
+                    (controller as any).removeListener('serialport:read', handleSerialData);
+                    (controller as any).removeListener('feeder:status', handleSerialData);
+                    (controller as any).removeListener('message', handleSerialData);
+                    (controller as any).removeListener('workflow:state', handleWorkflowState);
                 }
             }
         };
@@ -211,14 +226,25 @@ const MaterialCenterFinderModal: React.FC<ModalProps> = ({
         };
     }, [isRunning]);
 
+    // Immediate alarm abort handler
     useEffect(() => {
-        if (!isOpen) {
+        if (isAlarm && isRunningRef.current) {
+            cancelRequestedRef.current = true;
+            isRunningRef.current = false;
+            setIsRunning(false);
+            setDialogState('failed');
+        }
+    }, [isAlarm]);
+
+    useEffect(() => {
+        if (isOpen) {
             cancelRequestedRef.current = false;
             isRunningRef.current = false;
             hasCompletedRef.current = false;
             runStartTimeRef.current = 0;
             setDialogState('idle');
             setIsRunning(false);
+            setHasTriggered(false);
         }
     }, [isOpen]);
 
@@ -371,7 +397,9 @@ G10 L20 P0 Y0
     return ReactDOM.createPortal(
         <>
             <div className="material-center-finder-overlay">
-                <div className="material-center-finder-modal">
+                <div className="material-center-finder-modal-wrapper">
+                    <ModalJogDrawer disabled={isRunning} />
+                    <div className="material-center-finder-modal">
                     <div className="material-center-finder-header">
                         <div className="material-center-finder-title">
                             <span className="material-center-finder-title-icon">
@@ -447,7 +475,19 @@ G10 L20 P0 Y0
 
                             <div className="material-center-finder-form-group">
                                 <div className="material-center-finder-form-group-label">Probe Behavior</div>
-                                <SettingInput label="Probe Tip Diameter" value={tipDia} setter={handleTipDiaChange} unit={lengthUnit} step={isImperial ? "0.01" : "0.1"} disabled={isRunning} />
+                                <SettingInput
+                                    label="Probe Tip Diameter"
+                                    value={tipDia}
+                                    setter={() => {}}
+                                    unit={lengthUnit}
+                                    step={isImperial ? "0.01" : "0.1"}
+                                    disabled={true}
+                                    title="Calibrated stylus diameter can only be modified in Probe Settings or Stylus Calibration"
+                                />
+                                <div className="material-center-finder-setting-note">
+                                    <span>🔒</span>
+                                    <span>Tip diameter is locked. Change in <strong>Probe Settings</strong> or <strong>Stylus Calibration</strong>.</span>
+                                </div>
                                 <SettingInput label="Retract Distance" value={retractDist} setter={setRetractDist} unit={lengthUnit} step={isImperial ? "0.01" : "0.1"} disabled={isRunning} />
                                 <SettingInput label="Safe Z" value={safeZ} setter={setSafeZ} unit={lengthUnit} step={isImperial ? "0.05" : "0.5"} disabled={isRunning} />
                             </div>
@@ -456,25 +496,62 @@ G10 L20 P0 Y0
 
                     <div className="material-center-finder-footer">
                         <div className="material-center-finder-footer-left">
-                            {isRunning && (
+                            {isRunning ? (
                                 <div className="material-center-finder-running-status">
                                     <div className="material-center-finder-running-dot" />
                                     Running...
                                 </div>
+                            ) : (
+                                connectivityTest && (
+                                    <div className="material-center-finder-connectivity-status">
+                                        <div
+                                            className={`material-center-finder-connectivity-dot ${
+                                                probePinStatus
+                                                    ? 'active'
+                                                    : hasTriggered
+                                                    ? 'verified'
+                                                    : 'untested'
+                                            }`}
+                                        />
+                                        <span
+                                            className={`material-center-finder-connectivity-text ${
+                                                probePinStatus
+                                                    ? 'active'
+                                                    : hasTriggered
+                                                    ? 'verified'
+                                                    : 'untested'
+                                            }`}
+                                        >
+                                            {probePinStatus
+                                                ? '3D Probe: Contact Triggered'
+                                                : hasTriggered
+                                                ? '3D Probe: Connectivity Verified ✓'
+                                                : '3D Probe: Not Tested (Touch tip to test)'}
+                                        </span>
+                                    </div>
+                                )
                             )}
                         </div>
 
                         <div className="material-center-finder-footer-right">
                             {isRunning ? (
                                 <button onClick={handleCancel} className="material-center-finder-btn material-center-finder-btn-stop">
-                                    ⏹ Stop Macro
+                                    ⏹ Stop Probing
                                 </button>
                             ) : (
                                 <button
                                     onClick={handleRun}
-                                    disabled={!isFormValid || isRunning}
+                                    disabled={!isFormValid || isRunning || isAlarm || (connectivityTest && !hasTriggered)}
                                     className="material-center-finder-btn material-center-finder-btn-run"
-                                    title={!isFormValid ? 'Please enter valid material dimensions for X and Y' : 'Find Material Center'}
+                                    title={
+                                        isAlarm
+                                            ? 'Machine is locked in Alarm state. Please unlock machine before probing.'
+                                            : !isFormValid
+                                            ? 'Please enter valid material dimensions for X and Y'
+                                            : connectivityTest && !hasTriggered
+                                            ? 'Please touch/deflect probe tip to verify connectivity before running'
+                                            : 'Find Material Center'
+                                    }
                                 >
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                         <circle cx="12" cy="12" r="10"></circle>
@@ -483,13 +560,18 @@ G10 L20 P0 Y0
                                         <line x1="12" y1="6" x2="12" y2="2"></line>
                                         <line x1="12" y1="22" x2="12" y2="18"></line>
                                     </svg>
-                                    Find Material Center
+                                    {isAlarm
+                                        ? 'Machine in Alarm (Unlock First)'
+                                        : connectivityTest && !hasTriggered && isFormValid
+                                        ? 'Verify Probe Circuit First'
+                                        : 'Find Material Center'}
                                 </button>
                             )}
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
             {dialogState !== 'idle' && ReactDOM.createPortal(
                 <div className="material-center-finder-confirmation-overlay">

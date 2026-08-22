@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Touch Probe Edge & Corner Finder</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="plugin-container">
+        <!-- Header -->
+        <div class="plugin-header">
+            <div class="plugin-title">
+                <span>📐</span>
+                <span>3D Probe Edge & Corner Finder</span>
+            </div>
+            <div class="plugin-header-actions">
+                <button type="button" id="btnToggleJog" class="btn-toggle-jog" title="Toggle Jog Controls">
+                    <span>🕹️</span>
+                    <span>Jog Controls</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Stylus Tip Calibration Banner -->
+        <div class="plugin-banner" id="tipBanner">
+            <div class="plugin-banner-text">
+                <span>💡</span>
+                <span>
+                    <strong>Calibrate Stylus:</strong> For dead center edge accuracy, enter your probe stylus calibrated triggering diameter.
+                </span>
+            </div>
+            <button type="button" class="plugin-banner-dismiss" id="btnDismissBanner">
+                Don't show again ✕
+            </button>
+        </div>
+
+        <!-- Body Grid -->
+        <div class="plugin-body">
+            <!-- Left: Interactive Diagram -->
+            <div class="diagram-panel">
+                <div class="diagram-title">Select Datum Edges & Surface</div>
+
+                <div class="interactive-stage">
+                    <!-- Top / Back (+Y) Edge Selector -->
+                    <button type="button" id="btnTopY" class="selector-btn top" title="Probe Top / Back Edge (+Y)">
+                        <span class="check-box">☐</span>
+                        <span>+Y (Back)</span>
+                    </button>
+
+                    <!-- Left (-X) Edge Selector -->
+                    <button type="button" id="btnLeftX" class="selector-btn left" title="Probe Left Edge (-X)">
+                        <span class="check-box">☑</span>
+                        <span>-X (Left)</span>
+                    </button>
+
+                    <!-- Stock Center Block -->
+                    <div id="stockBlock" class="stock-block edge-left-active">
+                        <!-- Z Surface Selector -->
+                        <button type="button" id="btnProbeZ" class="z-selector-btn" title="Probe Top Z Surface">
+                            <span class="check-box">☐</span>
+                            <span>Z Surface</span>
+                        </button>
+
+                        <!-- Corner Target Dot Marker (Gliding) -->
+                        <div id="cornerMarker" class="corner-marker inactive"></div>
+                    </div>
+
+                    <!-- Right (+X) Edge Selector -->
+                    <button type="button" id="btnRightX" class="selector-btn right" title="Probe Right Edge (+X)">
+                        <span class="check-box">☐</span>
+                        <span>+X (Right)</span>
+                    </button>
+
+                    <!-- Bottom / Front (-Y) Edge Selector -->
+                    <button type="button" id="btnBottomY" class="selector-btn bottom" title="Probe Front / Bottom Edge (-Y)">
+                        <span class="check-box">☐</span>
+                        <span>-Y (Front)</span>
+                    </button>
+
+                    <!-- Gliding Directional Arrows -->
+                    <div id="arrowLeft" class="edge-arrow arrow-left active">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                            <polyline points="12 5 19 12 12 19" />
+                        </svg>
+                    </div>
+
+                    <div id="arrowRight" class="edge-arrow arrow-right inactive">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12" />
+                            <polyline points="12 19 5 12 12 5" />
+                        </svg>
+                    </div>
+
+                    <div id="arrowTop" class="edge-arrow arrow-top inactive">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <polyline points="19 12 12 19 5 12" />
+                        </svg>
+                    </div>
+
+                    <div id="arrowBottom" class="edge-arrow arrow-bottom inactive">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="19" x2="12" y2="5" />
+                            <polyline points="5 12 12 5 19 12" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Instruction Guide Box -->
+                <div class="instruction-card" id="instructionGuide"></div>
+            </div>
+
+            <!-- Right: Settings Form -->
+            <div class="form-panel">
+                <!-- 3D Probe Stylus -->
+                <div class="form-group">
+                    <div class="form-group-label">3D Probe Stylus</div>
+                    <div class="input-field">
+                        <label class="input-label" for="inputTipDia">Probe Tip Diameter</label>
+                        <div class="input-wrapper">
+                            <input type="number" step="0.001" id="inputTipDia" class="input-box" value="2.000">
+                            <span class="input-unit unit-len">mm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feedrates -->
+                <div class="form-group">
+                    <div class="form-group-label">Feedrates</div>
+                    <div class="input-field">
+                        <label class="input-label" for="inputFastFeed">Fast Search Feed</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="inputFastFeed" class="input-box" value="150">
+                            <span class="input-unit unit-feed">mm/min</span>
+                        </div>
+                    </div>
+                    <div class="input-field">
+                        <label class="input-label" for="inputSlowFeed">Slow Precision Feed</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="inputSlowFeed" class="input-box" value="50">
+                            <span class="input-unit unit-feed">mm/min</span>
+                        </div>
+                    </div>
+                    <div class="input-field">
+                        <label class="input-label" for="inputRapidFeed">Rapid Move Feed (0 = Max)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="inputRapidFeed" class="input-box" value="0">
+                            <span class="input-unit unit-feed">mm/min</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Motion Behavior -->
+                <div class="form-group">
+                    <div class="form-group-label">Motion Behavior</div>
+                    <div class="input-field">
+                        <label class="input-label" for="inputRetractDist">Retract Distance</label>
+                        <div class="input-wrapper">
+                            <input type="number" step="0.1" id="inputRetractDist" class="input-box" value="2.0">
+                            <span class="input-unit unit-len">mm</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="plugin-footer">
+            <div class="connectivity-status">
+                <div id="connectivityDot" class="connectivity-dot untested"></div>
+                <span id="connectivityText" class="connectivity-text">3D Probe: Not Tested (Touch tip to test)</span>
+            </div>
+            <div class="footer-actions">
+                <button type="button" id="btnRun" class="btn-primary">
+                    <span>Run Edge Probe</span>
+                </button>
+                <button type="button" id="btnStop" class="btn-stop" style="display: none;">
+                    <span>⏹</span>
+                    <span>Stop Macro</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide-Out Jog Control Module -->
+    <div id="jogDrawer" class="jog-drawer">
+        <div class="jog-header">
+            <div class="jog-header-title">
+                <span>🕹️</span>
+                <span>Jog Controls</span>
+            </div>
+            <button type="button" id="btnCloseJog" class="jog-close-btn">✕</button>
+        </div>
+        <div class="jog-content">
+            <!-- Step Size -->
+            <div class="form-group">
+                <div class="form-group-label">Step Size (<span class="unit-len">mm</span>)</div>
+                <div class="jog-step-grid">
+                    <button type="button" class="step-btn" data-step="0.01">0.01</button>
+                    <button type="button" class="step-btn" data-step="0.1">0.1</button>
+                    <button type="button" class="step-btn active" data-step="1.0">1.0</button>
+                    <button type="button" class="step-btn" data-step="10.0">10.0</button>
+                </div>
+            </div>
+
+            <!-- XY Jog Pad -->
+            <div class="form-group">
+                <div class="form-group-label">XY Axis Jog</div>
+                <div class="jog-pad">
+                    <div></div>
+                    <button type="button" class="jog-btn" data-axis="Y" data-dir="1">Y+</button>
+                    <div></div>
+                    <button type="button" class="jog-btn" data-axis="X" data-dir="-1">X-</button>
+                    <button type="button" class="jog-btn" style="background:#0f172a;font-size:0.75rem;">STOP</button>
+                    <button type="button" class="jog-btn" data-axis="X" data-dir="1">X+</button>
+                    <div></div>
+                    <button type="button" class="jog-btn" data-axis="Y" data-dir="-1">Y-</button>
+                    <div></div>
+                </div>
+            </div>
+
+            <!-- Z Axis Jog -->
+            <div class="form-group">
+                <div class="form-group-label">Z Axis Jog</div>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button type="button" class="jog-btn" style="flex: 1;" data-axis="Z" data-dir="1">Z+ (Up)</button>
+                    <button type="button" class="jog-btn" style="flex: 1;" data-axis="Z" data-dir="-1">Z- (Down)</button>
+                </div>
+            </div>
+
+            <!-- Quick Zero Actions -->
+            <div class="form-group">
+                <div class="form-group-label">Zero Coordinates</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <button type="button" class="step-btn" id="btnZeroAll">Zero XYZ</button>
+                    <button type="button" class="step-btn" id="btnZeroZ">Zero Z</button>
+                    <button type="button" class="step-btn" id="btnZeroX">Zero X</button>
+                    <button type="button" class="step-btn" id="btnZeroY">Zero Y</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

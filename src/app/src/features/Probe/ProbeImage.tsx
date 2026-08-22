@@ -88,11 +88,11 @@ const ProbeImage: React.FC<Props> = ({
     const imgSrc = getProbeImage();
 
     return (
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center w-full h-full min-h-0">
             <img
                 alt="Probe Block orientation guide image"
                 src={imgSrc}
-                className="w-[15vh] my-0 mx-auto dark:invert portrait:w-[10vh]"
+                className="w-auto h-auto max-h-[14vh] max-w-full my-0 mx-auto dark:invert portrait:max-h-[10vh] object-contain"
             />
         </div>
     );

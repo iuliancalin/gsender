@@ -3,7 +3,7 @@
 .material-center-finder-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.35);
   z-index: 999999;
   display: flex;
   justify-content: center;
@@ -11,23 +11,47 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
-.material-center-finder-modal {
-  background: #22272e;
-  color: #e1e4ea;
+.material-center-finder-modal-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: min(92vw, 780px);
-  border-radius: 10px;
-  border: 1px solid #374151;
+}
+
+.material-center-finder-modal {
+  position: relative;
+  z-index: 2;
+  background: #1e1e24;
+  color: #e2e8f0;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #33333d;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
+  animation: materialCenterSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes materialCenterSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .material-center-finder-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
-  border-bottom: 1px solid #374151;
+  padding: 16px 20px;
+  background: #18181c;
+  border-bottom: 1px solid #2d2d38;
 }
 
 .material-center-finder-title {
@@ -67,27 +91,28 @@
 }
 
 .material-center-finder-subtitle {
-  padding: 16px 24px 0 24px;
-  font-size: 14px;
-  color: #d1d5db;
+  padding: 12px 20px 0 20px;
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.4;
 }
 
 .material-center-finder-body {
   display: flex;
-  padding: 24px;
-  gap: 32px;
+  padding: 14px 20px;
+  gap: 20px;
 }
 
 .material-center-finder-diagram {
   flex: 1 1 50%;
-  background: #1c1f26;
-  border-radius: 8px;
-  border: 1px solid #374151;
+  background: #141418;
+  border-radius: 10px;
+  border: 1px solid #272730;
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
-  min-height: 360px;
+  min-height: 330px;
 }
 
 .material-center-finder-diagram-line-h,
@@ -115,10 +140,10 @@
 }
 
 .material-center-finder-material-block {
-  width: 140px;
-  height: 140px;
+  width: 130px;
+  height: 130px;
   background: #6b7280;
-  border-radius: 16px;
+  border-radius: 14px;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -127,8 +152,8 @@
 }
 
 .material-center-finder-target-ring {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border: 1px dashed #3b82f6;
   border-radius: 50%;
   position: absolute;
@@ -205,42 +230,60 @@
 }
 
 .material-center-finder-form-panel {
-  flex: 1 1 50%;
+  flex: 0 0 280px;
+  max-width: 280px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
 }
 
 .material-center-finder-form-group {
+  background: #141418;
+  border: 1px solid #272730;
+  border-radius: 8px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
+  gap: 8px;
 }
 
 .material-center-finder-form-group-label {
-  font-size: 13px;
-  font-weight: bold;
-  color: #f3f4f6;
-  margin-bottom: 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 5px;
+  margin-bottom: 2px;
 }
 
 .material-center-finder-input-field {
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 .material-center-finder-input-label {
-  font-size: 13px;
-  color: #d1d5db;
+  font-size: 0.8rem;
+  color: #cbd5e1;
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .material-center-finder-input-wrapper {
   display: flex;
-  background: #1c1f26;
-  border: 1px solid #374151;
+  background: #0f172a;
+  border: 1px solid #334155;
   border-radius: 6px;
-  padding: 6px 12px;
+  padding: 4px 10px;
   align-items: center;
+}
+
+.material-center-finder-input-wrapper.disabled,
+.material-center-finder-input-wrapper:has(:disabled) {
+  background: rgba(15, 23, 42, 0.5);
+  border-color: #1e293b;
+  cursor: not-allowed;
+  opacity: 0.85;
 }
 
 .material-center-finder-input {
@@ -248,7 +291,7 @@
   background: transparent;
   border: none;
   color: #fff;
-  font-size: 14px;
+  font-size: 13px;
   outline: none;
   width: 100%;
 }
@@ -263,21 +306,41 @@
 }
 
 .material-center-finder-input-unit {
-  font-size: 13px;
+  font-size: 12px;
   color: #9ca3af;
   margin-left: 8px;
   user-select: none;
 }
 
+.material-center-finder-setting-note {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.35;
+  margin-top: 0;
+  margin-bottom: 2px;
+}
+
+.material-center-finder-setting-note strong {
+  color: #38bdf8;
+  font-weight: 600;
+}
+
 .material-center-finder-footer {
-  padding: 16px 24px;
-  border-top: 1px solid #374151;
+  padding: 12px 18px;
+  border-top: 1px solid #2d2d38;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #22272e;
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
+  background: #18181c;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
 }
 
 .material-center-finder-footer-left {
@@ -302,6 +365,58 @@
   background: #22c55e;
   border-radius: 50%;
   animation: mcf-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Connectivity Test Visual Indicator */
+.material-center-finder-connectivity-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    user-select: none;
+}
+
+.material-center-finder-connectivity-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    transition: all 0.25s ease-out;
+}
+
+.material-center-finder-connectivity-dot.untested {
+    background: #f43f5e;
+    box-shadow: 0 0 10px rgba(244, 63, 94, 0.7);
+    animation: mcfProbePulseRed 1.3s infinite alternate;
+}
+
+.material-center-finder-connectivity-dot.verified {
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.material-center-finder-connectivity-dot.active {
+    background: #38bdf8;
+    box-shadow: 0 0 12px #38bdf8, 0 0 20px rgba(56, 189, 248, 0.8);
+    transform: scale(1.25);
+}
+
+.material-center-finder-connectivity-text.untested {
+    color: #94a3b8;
+}
+
+.material-center-finder-connectivity-text.verified {
+    color: #34d399;
+}
+
+.material-center-finder-connectivity-text.active {
+    color: #38bdf8;
+    font-weight: 600;
+}
+
+@keyframes mcfProbePulseRed {
+    0% { transform: scale(0.9); opacity: 0.75; }
+    100% { transform: scale(1.15); opacity: 1; }
 }
 
 @keyframes mcf-pulse {

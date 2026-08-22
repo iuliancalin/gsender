@@ -96,6 +96,7 @@ class WindowManager {
         const window = new BrowserWindow({
             ...options,
             show: false,
+            backgroundColor: '#18181c',
             autoHideMenuBar: true,
             webPreferences: {
                 nodeIntegration: true,
@@ -151,21 +152,31 @@ class WindowManager {
             shell.openExternal(url);
         });
 
-        if (splashScreen) {
-            webContents.once('dom-ready', () => {
-                if (shouldMaximize) {
-                    window.maximize();
-                }
-                window.show();
-                splashScreen.close();
-                splashScreen.destroy();
-            });
-        } else {
+        const revealWindow = () => {
             if (shouldMaximize) {
                 window.maximize();
             }
             window.show();
-        }
+            if (splashScreen && !splashScreen.isDestroyed()) {
+                try {
+                    splashScreen.close();
+                    splashScreen.destroy();
+                } catch (err) {
+                    // Ignore if already destroyed
+                }
+            }
+        };
+
+        window.once('ready-to-show', revealWindow);
+
+        // Fallback in case ready-to-show takes too long
+        webContents.once('dom-ready', () => {
+            setTimeout(() => {
+                if (!window.isVisible()) {
+                    revealWindow();
+                }
+            }, 300);
+        });
 
         // Call `ses.setProxy` to ignore proxy settings
         // http://electron.atom.io/docs/latest/api/session/#sessetproxyconfig-callback

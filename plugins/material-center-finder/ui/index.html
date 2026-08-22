@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Material Center Finder</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-disabled: #475569;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --success: #10b981;
+      --input-bg: #0f172a;
+      --input-border: #475569;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 720px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 14px;
+      margin-bottom: 16px;
+    }
+
+    .title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .desc {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .diagram-panel {
+      background: #090d16;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .diagram-svg {
+      width: 100%;
+      max-width: 380px;
+      height: 160px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .group {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .group-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #93c5fd;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .field {
+      margin-bottom: 10px;
+    }
+
+    .field:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .input-wrap:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      padding: 8px 10px;
+      font-size: 0.875rem;
+      outline: none;
+    }
+
+    input::placeholder {
+      color: #64748b;
+    }
+
+    .unit {
+      padding: 8px 10px;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-left: 1px solid var(--card-border);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex: 1;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    .btn:disabled {
+      background: var(--accent-disabled);
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .btn-stop {
+      background: var(--danger);
+      flex: 0 0 160px;
+    }
+
+    .btn-stop:hover:not(:disabled) {
+      background: var(--danger-hover);
+    }
+
+    .quick-tools {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--card-border);
+    }
+
+    .tool-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .tool-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: #64748b;
+    }
+
+    .status-panel {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    .status-panel.running {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      color: #93c5fd;
+    }
+
+    .status-panel.success {
+      display: block;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #34d399;
+    }
+
+    .status-panel.error {
+      display: block;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #f87171;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #60a5fa;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title">
+        <span>🎯 Material Center Finder</span>
+        <span class="badge">Plugin</span>
+      </div>
+      <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border-color: rgba(16, 185, 129, 0.4)">Metric (mm)</span>
+    </div>
+
+    <p class="desc">
+      Place your probe/bit roughly above the visual center of your workpiece. Enter stock dimensions and run the 5-point probing routine to zero the active coordinate system (P0).
+    </p>
+
+    <!-- Visual Diagram -->
+    <div class="diagram-panel">
+      <svg class="diagram-svg" viewBox="0 0 320 140">
+        <rect x="50" y="20" width="220" height="100" rx="4" fill="#1e293b" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4,4" />
+        <text x="160" y="15" fill="#93c5fd" font-size="10" text-anchor="middle" font-weight="600">Stock Width (X)</text>
+        <text x="40" y="75" fill="#93c5fd" font-size="10" text-anchor="end" font-weight="600">Length (Y)</text>
+
+        <circle cx="160" cy="70" r="6" fill="#10b981" />
+        <circle cx="160" cy="70" r="14" fill="none" stroke="#10b981" stroke-width="1.5" stroke-dasharray="2,2" />
+        <text x="160" y="94" fill="#34d399" font-size="9" text-anchor="middle" font-weight="bold">1. Probe Z Surface</text>
+
+        <circle cx="270" cy="70" r="4" fill="#3b82f6" />
+        <text x="278" y="73" fill="#93c5fd" font-size="8">2. X Right</text>
+        <circle cx="50" cy="70" r="4" fill="#3b82f6" />
+        <text x="42" y="73" fill="#93c5fd" font-size="8" text-anchor="end">3. X Left</text>
+
+        <circle cx="160" cy="20" r="4" fill="#3b82f6" />
+        <text x="160" y="32" fill="#93c5fd" font-size="8" text-anchor="middle">4. Y Top</text>
+        <circle cx="160" cy="120" r="4" fill="#3b82f6" />
+        <text x="160" y="115" fill="#93c5fd" font-size="8" text-anchor="middle">5. Y Bottom</text>
+      </svg>
+    </div>
+
+    <!-- Parameter Inputs -->
+    <div class="grid">
+      <!-- Dimensions -->
+      <div class="group">
+        <div class="group-title">Material Size (User Input)</div>
+        <div class="field">
+          <label for="sizeX">Size in X (Width)</label>
+          <div class="input-wrap">
+            <input type="number" id="sizeX" step="1" placeholder="—" />
+            <span class="unit">mm</span>
+          </div>
+        </div>
+        <div class="field">
+          <label for="sizeY">Size in Y (Length)</label>
+          <div class="input-wrap">
+            <input type="number" id="sizeY" step="1" placeholder="—" />
+            <span class="unit">mm</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Probe Feeds -->
+      <div class="group">
+        <div class="group-title">Probe Feedrates</div>
+        <div class="field">
+          <label for="fastFeed">Fast Feed</label>
+          <div class="input-wrap">
+            <input type="number" id="fastFeed" value="150" step="10" />
+            <span class="unit">mm/min</span>
+          </div>
+        </div>
+        <div class="field">
+          <label for="slowFeed">Slow Feed</label>
+          <div class="input-wrap">
+            <input type="number" id="slowFeed" value="50" step="5" />
+            <span class="unit">mm/min</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Probe Behavior -->
+      <div class="group" style="grid-column: 1 / -1;">
+        <div class="group-title">Probe Behavior</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="field">
+            <label for="retractDist">Retract Distance</label>
+            <div class="input-wrap">
+              <input type="number" id="retractDist" value="2.0" step="0.1" />
+              <span class="unit">mm</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="safeZ">Safe Z</label>
+            <div class="input-wrap">
+              <input type="number" id="safeZ" value="5.0" step="0.5" />
+              <span class="unit">mm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Execution Buttons -->
+    <div class="btn-row">
+      <button id="runBtn" class="btn" disabled title="Please enter valid material dimensions for X and Y">
+        <span>🎯 Find Material Center</span>
+      </button>
+      <button id="stopBtn" class="btn btn-stop" style="display: none;">
+        <span>⏹ Stop Macro</span>
+      </button>
+    </div>
+
+    <!-- Quick Utilities -->
+    <div class="quick-tools">
+      <span style="font-size: 0.75rem; color: var(--text-muted); align-self: center; margin-right: 4px;">Quick Actions:</span>
+      <button class="tool-btn" id="btnGoCenter">📍 Go to Center (X0 Y0)</button>
+      <button class="tool-btn" id="btnLiftZ">⬆ Lift Z (+20mm)</button>
+      <button class="tool-btn" id="btnZeroXY">🔄 Zero X & Y</button>
+      <button class="tool-btn" id="btnZeroZ">📏 Zero Z</button>
+    </div>
+
+    <!-- Status Box -->
+    <div id="statusBox" class="status-panel"></div>
+  </div>
+
+  <script>
+    const BRIDGE_CHANNEL = "gsender:plugin-bridge";
+    const pendingRequests = new Map();
+
+    // Listen for bridge responses from gSender
+    window.addEventListener("message", (event) => {
+      if (event.data?.channel !== BRIDGE_CHANNEL || !event.data?.response) {
+        return;
+      }
+      const response = event.data.response;
+      const resolver = pendingRequests.get(response.id);
+      if (resolver) {
+        pendingRequests.delete(response.id);
+        if (response.ok) {
+          resolver.resolve(response.result);
+        } else {
+          resolver.reject(new Error(response.error || "Bridge request failed"));
+        }
+      }
+    });
+
+    // Send bridge request
+    function sendBridgeRequest(type, payload = {}) {
+      return new Promise((resolve, reject) => {
+        const id = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        pendingRequests.set(id, { resolve, reject });
+
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({
+            channel: BRIDGE_CHANNEL,
+            request: {
+              id: id,
+              type: type,
+              payload: payload
+            }
+          }, '*');
+        } else {
+          reject(new Error("Plugin not running inside gSender"));
+        }
+      });
+    }
+
+    function runMachineCommand(cmd, args = []) {
+      return sendBridgeRequest("machine:command", { cmd: cmd, args: args });
+    }
+
+    function sendGcode(gcode) {
+      return runMachineCommand("gcode", [gcode]);
+    }
+
+    const sizeXInput = document.getElementById('sizeX');
+    const sizeYInput = document.getElementById('sizeY');
+    const fastFeedInput = document.getElementById('fastFeed');
+    const slowFeedInput = document.getElementById('slowFeed');
+    const retractDistInput = document.getElementById('retractDist');
+    const safeZInput = document.getElementById('safeZ');
+    const runBtn = document.getElementById('runBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const statusBox = document.getElementById('statusBox');
+
+    let isRunning = false;
+
+    function checkValidity() {
+      const x = parseFloat(sizeXInput.value);
+      const y = parseFloat(sizeYInput.value);
+      const isValid = !isNaN(x) && x > 0 && !isNaN(y) && y > 0;
+      runBtn.disabled = !isValid || isRunning;
+    }
+
+    sizeXInput.addEventListener('input', checkValidity);
+    sizeYInput.addEventListener('input', checkValidity);
+
+    function buildMacroScript(sizeX, sizeY, fastFeed, slowFeed, retractDist, safeZ) {
+      return `; =========================================
+; MATERIAL CENTER FINDER MACRO
+; =========================================
+%wait
+
+%STOCK_X = ${sizeX}
+%STOCK_Y = ${sizeY}
+%PROBE_FEED_FAST = ${fastFeed}
+%PROBE_FEED_SLOW = ${slowFeed}
+%PROBE_RETRACT = ${retractDist}
+%Z_SAFE_LIFT = ${safeZ}
+%Z_UNDER_SURFACE = -4
+%EDGE_MARGIN_MAJOR = 10 
+%EDGE_MARGIN = 5
+
+%UNITS=modal.units
+%DISTANCE=modal.distance
+
+G91
+G21
+
+; --- PROBE Z ---
+G38.2 Z-50 F[PROBE_FEED_FAST]
+G0 Z[PROBE_RETRACT]
+G38.2 Z-5 F[PROBE_FEED_SLOW]
+G0 Z[PROBE_RETRACT]
+G4 P1
+G10 L20 P0 Z[PROBE_RETRACT]
+%Z_LIFT_TOTAL = Z_SAFE_LIFT - Z_UNDER_SURFACE
+G0 Z[Z_LIFT_TOTAL]
+
+; --- PROBE X EDGES ---
+G0 X[ STOCK_X/2 + EDGE_MARGIN_MAJOR ]
+G0 Z-[Z_LIFT_TOTAL - Z_UNDER_SURFACE]
+G38.2 X-[ STOCK_X + 2*EDGE_MARGIN ] F[PROBE_FEED_FAST]
+G0 X[PROBE_RETRACT]
+G38.2 X-5 F[PROBE_FEED_SLOW]
+%X_RIGHT = posx
+G0 X[PROBE_RETRACT]
+G0 Z[Z_LIFT_TOTAL]
+
+G0 X-[ STOCK_X + 2*EDGE_MARGIN ]
+G0 Z-[Z_LIFT_TOTAL]
+G38.2 X[ STOCK_X + 2*EDGE_MARGIN ] F[PROBE_FEED_FAST]
+G0 X-[PROBE_RETRACT]
+G38.2 X5 F[PROBE_FEED_SLOW]
+%X_LEFT = posx
+G0 X-[PROBE_RETRACT]
+G0 Z[Z_LIFT_TOTAL]
+
+; Calculate middle of X chord and return to center
+%X_CHORD = X_RIGHT - X_LEFT
+G10 L20 P0 X[X_LEFT]
+G0 X[X_CHORD/2 + PROBE_RETRACT]
+%X_CENTER = posx
+G4 P1
+G10 L20 P0 X0
+
+; --- PROBE Y EDGES ---
+G0 Y[ STOCK_Y/2 + EDGE_MARGIN_MAJOR ]
+G0 Z-[Z_LIFT_TOTAL]
+G38.2 Y-[ STOCK_Y + 2*EDGE_MARGIN ] F[PROBE_FEED_FAST]
+G0 Y[PROBE_RETRACT]
+G38.2 Y-5 F[PROBE_FEED_SLOW]
+%Y_TOP = posy
+G0 Y[PROBE_RETRACT]
+G0 Z[Z_LIFT_TOTAL]
+
+G0 Y-[ STOCK_Y + 2*EDGE_MARGIN ]
+G0 Z-[Z_LIFT_TOTAL]
+G38.2 Y[ STOCK_Y + 2*EDGE_MARGIN ] F[PROBE_FEED_FAST]
+G0 Y-[PROBE_RETRACT]
+G38.2 Y5 F[PROBE_FEED_SLOW]
+%Y_BTM = posy
+G0 Y-[PROBE_RETRACT]
+G0 Z[Z_LIFT_TOTAL]
+
+; Calculate middle of Y chord and return to center
+%Y_CHORD = Y_TOP - Y_BTM
+G10 L20 P0 Y[Y_BTM]
+G0 Y[Y_CHORD/2 + PROBE_RETRACT]
+%Y_CENTER = posy
+G4 P1
+G10 L20 P0 Y0
+
+(MSG, MATERIAL_CENTER_DONE)
+
+[UNITS] [DISTANCE]
+`;
+    }
+
+    // Run Probing Macro
+    runBtn.addEventListener('click', async () => {
+      const sizeX = parseFloat(sizeXInput.value);
+      const sizeY = parseFloat(sizeYInput.value);
+      const fastFeed = parseFloat(fastFeedInput.value) || 150.0;
+      const slowFeed = parseFloat(slowFeedInput.value) || 50.0;
+      const retractDist = parseFloat(retractDistInput.value) || 2.0;
+      const safeZ = parseFloat(safeZInput.value) || 5.0;
+
+      const macroScript = buildMacroScript(sizeX, sizeY, fastFeed, slowFeed, retractDist, safeZ);
+
+      isRunning = true;
+      runBtn.style.display = 'none';
+      stopBtn.style.display = 'inline-flex';
+      
+      statusBox.className = 'status-panel running';
+      statusBox.innerHTML = '<div class="spinner"></div><span>Sending probing macro to controller...</span>';
+
+      try {
+        await sendGcode(macroScript);
+        statusBox.innerHTML = '<div class="spinner"></div><span>Probing in progress: Z surface &rarr; X edges &rarr; Y edges...</span>';
+      } catch (err) {
+        statusBox.className = 'status-panel error';
+        statusBox.textContent = 'Error sending command: ' + err.message;
+        isRunning = false;
+        runBtn.style.display = 'inline-flex';
+        stopBtn.style.display = 'none';
+      }
+    });
+
+    // Stop Macro
+    stopBtn.addEventListener('click', async () => {
+      try {
+        await runMachineCommand('reset');
+        statusBox.className = 'status-panel error';
+        statusBox.textContent = 'Macro stopped. Machine reset command sent.';
+      } catch (err) {
+        console.error(err);
+      } finally {
+        isRunning = false;
+        runBtn.style.display = 'inline-flex';
+        stopBtn.style.display = 'none';
+        checkValidity();
+      }
+    });
+
+    // Quick Actions
+    document.getElementById('btnGoCenter').addEventListener('click', async () => {
+      const safeZ = parseFloat(safeZInput.value) || 5.0;
+      try {
+        await sendGcode(`G21 G90 G0 Z${safeZ}\nG0 X0 Y0`);
+        statusBox.className = 'status-panel success';
+        statusBox.textContent = 'Moving to X0 Y0 center...';
+      } catch (err) {
+        statusBox.className = 'status-panel error';
+        statusBox.textContent = 'Error: ' + err.message;
+      }
+    });
+
+    document.getElementById('btnLiftZ').addEventListener('click', async () => {
+      try {
+        await sendGcode('G21\nG91 G0 Z20\nG90');
+        statusBox.className = 'status-panel success';
+        statusBox.textContent = 'Lifted Z +20mm';
+      } catch (err) {
+        statusBox.className = 'status-panel error';
+        statusBox.textContent = 'Error: ' + err.message;
+      }
+    });
+
+    document.getElementById('btnZeroXY').addEventListener('click', async () => {
+      try {
+        await sendGcode('G10 L20 P0 X0 Y0');
+        statusBox.className = 'status-panel success';
+        statusBox.textContent = 'Active coordinate system (P0) set to X0 Y0';
+      } catch (err) {
+        statusBox.className = 'status-panel error';
+        statusBox.textContent = 'Error: ' + err.message;
+      }
+    });
+
+    document.getElementById('btnZeroZ').addEventListener('click', async () => {
+      try {
+        await sendGcode('G10 L20 P0 Z0');
+        statusBox.className = 'status-panel success';
+        statusBox.textContent = 'Active coordinate system (P0) set to Z0';
+      } catch (err) {
+        statusBox.className = 'status-panel error';
+        statusBox.textContent = 'Error: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
+  <rect width="64" height="64" rx="14" fill="#1e1e24"/>
+  <rect x="2" y="2" width="60" height="60" rx="12" stroke="#33333d" stroke-width="2"/>
+  
+  <!-- Workpiece Corner -->
+  <path d="M 22 48 L 48 48 L 48 22 L 22 22 Z" fill="#0f172a" stroke="#334155" stroke-width="2.5" rx="3"/>
+  <path d="M 22 48 L 22 22 L 48 22" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Corner Glowing Target Dot -->
+  <circle cx="22" cy="22" r="6" fill="#38bdf8" filter="drop-shadow(0 0 6px #38bdf8)"/>
+  <circle cx="22" cy="22" r="2.5" fill="#ffffff"/>
+  
+  <!-- Probe Stylus -->
+  <path d="M 12 12 L 19 19" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="12" cy="12" r="3" fill="#e2e8f0"/>
+</svg>

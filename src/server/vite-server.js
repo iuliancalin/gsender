@@ -9,6 +9,7 @@ export const viteServer = async (app) => {
 
     const devDir = path.resolve(projectRoot, 'src/app');
     const prodDirCandidates = [
+        path.resolve(__dirname, 'app'),
         path.resolve(bundleRoot, 'app'),
         path.resolve(projectRoot, 'dist/gsender/app'),
     ];

@@ -1,0 +1,16 @@
+{
+  "id": "edge-corner-finder",
+  "name": "3D Probe Edge & Corner Finder",
+  "version": "1.0.0",
+  "description": "3D Touch Probe Edge & Corner Finder with live 60fps animations, live probe connectivity detection, and integrated Jog Controls.",
+  "main": "index.html",
+  "icon": "icon.svg",
+  "category": "Probing",
+  "author": "Sienci Labs Community",
+  "permissions": [
+    "gcode:send",
+    "machine:status",
+    "machine:jog",
+    "machine:zero"
+  ]
+}

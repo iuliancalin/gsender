@@ -416,13 +416,31 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
 
     useEffect(() => {
         repopulateSettings();
-        pubsub.subscribe('repopulate', () => {
+        const repopSub = pubsub.subscribe('repopulate', () => {
             repopulateSettings();
             repopulateMachineProfile();
         });
-        pubsub.subscribe('eeprom:repopulate', () => {
+        const eepromSub = pubsub.subscribe('eeprom:repopulate', () => {
             repopulateEEPROM();
         });
+
+        const onStoreChange = debounce(() => {
+            repopulateSettings();
+        }, 50);
+
+        if (typeof (store as any).on === 'function') {
+            (store as any).on('change', onStoreChange);
+        }
+
+        return () => {
+            pubsub.unsubscribe(repopSub);
+            pubsub.unsubscribe(eepromSub);
+            if (typeof (store as any).off === 'function') {
+                (store as any).off('change', onStoreChange);
+            } else if (typeof (store as any).removeListener === 'function') {
+                (store as any).removeListener('change', onStoreChange);
+            }
+        };
     }, []);
 
     useEffect(() => {

@@ -6,6 +6,7 @@ import { useWorkspaceState } from 'app/hooks/useWorkspaceState';
 import { useTypedSelector } from 'app/hooks/useTypedSelector';
 import { IMPERIAL_UNITS } from 'app/constants';
 import { in2mm, mm2in } from 'app/lib/units';
+import pubsub from 'pubsub-js';
 import { ModalJogDrawer } from './ModalJogDrawer';
 import './BoreCenterFinderModal.css';
 
@@ -85,38 +86,71 @@ const BoreCenterFinderModal: React.FC<ModalProps> = ({
     const lengthUnit = isImperial ? 'in' : 'mm';
     const feedUnit = isImperial ? 'in/min' : 'mm/min';
 
-    const getTipDia = () => {
+    const getStoredTipDia = () => {
         const storedMetric = Number(store.get('widgets.probe.tipDiameter3D', store.get('workspace.probeTipDiameter', 2.0))) || 2.0;
         return isImperial ? Number(mm2in(storedMetric).toFixed(3)) : storedMetric;
     };
 
+    const getStoredFastFeed = () => {
+        const storedMetric = Number(store.get('widgets.probe.probeFastFeedrate', 150.0)) || 150.0;
+        return isImperial ? Number(mm2in(storedMetric).toFixed(1)) : storedMetric;
+    };
+
+    const getStoredSlowFeed = () => {
+        const storedMetric = Number(store.get('widgets.probe.probeFeedrate', 75.0)) || 75.0;
+        return isImperial ? Number(mm2in(storedMetric).toFixed(1)) : storedMetric;
+    };
+
+    const getStoredRetractDist = () => {
+        const storedMetric = Number(store.get('widgets.probe.retractionDistance', 2.0)) || 2.0;
+        return isImperial ? Number(mm2in(storedMetric).toFixed(3)) : storedMetric;
+    };
+
     const [probeMode, setProbeMode] = useState<'bore' | 'boss'>('bore');
-    const [tipDia, setTipDia] = useState<number | ''>(getTipDia);
+    const [tipDia, setTipDia] = useState<number | ''>(getStoredTipDia);
     const [featureDia, setFeatureDia] = useState<number | ''>('');
-    const [fastFeed, setFastFeed] = useState<number>(isImperial ? 6.0 : 150.0);
-    const [slowFeed, setSlowFeed] = useState<number>(isImperial ? 2.0 : 50.0);
-    const [retractDist, setRetractDist] = useState<number>(isImperial ? 0.08 : 2.0);
+    const [fastFeed, setFastFeed] = useState<number | ''>(getStoredFastFeed);
+    const [slowFeed, setSlowFeed] = useState<number | ''>(getStoredSlowFeed);
+    const [retractDist, setRetractDist] = useState<number | ''>(getStoredRetractDist);
     const [enableZLift, setEnableZLift] = useState<boolean>(true);
     const [zLiftHeight, setZLiftHeight] = useState<number | ''>(isImperial ? 0.6 : 15.0);
+
+    const handleFastFeedChange = (val: number | '') => {
+        setFastFeed(val);
+        if (typeof val === 'number' && !isNaN(val) && val > 0) {
+            const metricVal = isImperial ? Number(in2mm(val).toFixed(1)) : val;
+            store.set('widgets.probe.probeFastFeedrate', metricVal);
+            pubsub.publish('repopulate');
+        }
+    };
+
+    const handleSlowFeedChange = (val: number | '') => {
+        setSlowFeed(val);
+        if (typeof val === 'number' && !isNaN(val) && val > 0) {
+            const metricVal = isImperial ? Number(in2mm(val).toFixed(1)) : val;
+            store.set('widgets.probe.probeFeedrate', metricVal);
+            pubsub.publish('repopulate');
+        }
+    };
+
+    const handleRetractDistChange = (val: number | '') => {
+        setRetractDist(val);
+        if (typeof val === 'number' && !isNaN(val) && val > 0) {
+            const metricVal = isImperial ? Number(in2mm(val).toFixed(3)) : val;
+            store.set('widgets.probe.retractionDistance', metricVal);
+            pubsub.publish('repopulate');
+        }
+    };
+
     const [isRunning, setIsRunning] = useState<boolean>(false);
     const [dialogState, setDialogState] = useState<'idle' | 'success' | 'failed'>('idle');
 
     useEffect(() => {
-        const storedMetric = Number(store.get('widgets.probe.tipDiameter3D', store.get('workspace.probeTipDiameter', 2.0))) || 2.0;
-
-        if (isImperial) {
-            setFastFeed(6.0);
-            setSlowFeed(2.0);
-            setRetractDist(0.08);
-            setZLiftHeight(0.6);
-            setTipDia(Number(mm2in(storedMetric).toFixed(3)));
-        } else {
-            setFastFeed(150.0);
-            setSlowFeed(50.0);
-            setRetractDist(2.0);
-            setZLiftHeight(15.0);
-            setTipDia(storedMetric);
-        }
+        setFastFeed(getStoredFastFeed());
+        setSlowFeed(getStoredSlowFeed());
+        setRetractDist(getStoredRetractDist());
+        setZLiftHeight(isImperial ? 0.6 : 15.0);
+        setTipDia(getStoredTipDia());
         setHasTriggered(false);
     }, [isImperial, isOpen]);
 
@@ -276,9 +310,12 @@ const BoreCenterFinderModal: React.FC<ModalProps> = ({
         const effectiveSlowFeed = isImperial ? in2mm(Number(slowFeed)) : Number(slowFeed);
         const effectiveRetract = isImperial ? in2mm(Number(retractDist)) : Number(retractDist);
         const effectiveZLift = isImperial ? in2mm(Number(zLiftHeight) || 0.6) : (Number(zLiftHeight) || 15.0);
+        const effectiveRapidFeed = Number(store.get('widgets.probe.probeMovementSpeed', 0)) || 0;
 
+        const hasCustomRapid = !isNaN(effectiveRapidFeed) && effectiveRapidFeed > 0;
+        const rapidCmd = (coords: string) => (hasCustomRapid ? `G1 ${coords} F[RAPID_FEED]` : `G0 ${coords}`);
         const isLargeFeature = effectiveDia >= 50.0;
-        const traverseCmd = isLargeFeature ? 'G0' : 'G1 F800';
+        const traverseCmd = (coords: string) => (hasCustomRapid ? `G1 ${coords} F[RAPID_FEED]` : (isLargeFeature ? `G0 ${coords}` : `G1 ${coords} F800`));
 
         let macroScript = '';
         if (probeMode === 'bore') {
@@ -291,7 +328,7 @@ const BoreCenterFinderModal: React.FC<ModalProps> = ({
 %BORE_DIA = ${Number(effectiveDia.toFixed(3))}
 %PROBE_FEED_FAST = ${Number(effectiveFastFeed.toFixed(1))}
 %PROBE_FEED_SLOW = ${Number(effectiveSlowFeed.toFixed(1))}
-%PROBE_RETRACT = ${Number(effectiveRetract.toFixed(3))}
+${hasCustomRapid ? `%RAPID_FEED = ${Number(effectiveRapidFeed.toFixed(1))}\n` : ''}%PROBE_RETRACT = ${Number(effectiveRetract.toFixed(3))}
 %SEARCH_DIST = BORE_DIA/2 + 5
 
 %UNITS=modal.units
@@ -302,55 +339,55 @@ G21
 
 ; --- 1. PROBE +X INSIDE RIGHT WALL ---
 G38.2 X[SEARCH_DIST] F[PROBE_FEED_FAST]
-G0 X-[PROBE_RETRACT]
+${rapidCmd('X-[PROBE_RETRACT]')}
 G4 P0.3
 G38.2 X5 F[PROBE_FEED_SLOW]
 %X_RIGHT = posx
-G0 X-[PROBE_RETRACT]
+${rapidCmd('X-[PROBE_RETRACT]')}
 G4 P0.3
 
 ; --- 2. PROBE -X INSIDE LEFT WALL ---
 G38.2 X-[SEARCH_DIST + PROBE_RETRACT] F[PROBE_FEED_FAST]
-G0 X[PROBE_RETRACT]
+${rapidCmd('X[PROBE_RETRACT]')}
 G4 P0.3
 G38.2 X-5 F[PROBE_FEED_SLOW]
 %X_LEFT = posx
-G0 X[PROBE_RETRACT]
+${rapidCmd('X[PROBE_RETRACT]')}
 G4 P0.3
 
 ; --- 3. MOVE DIRECTLY TO TRUE X CENTER & ZERO X ---
 %X_CHORD = X_RIGHT - X_LEFT
-G0 X[ X_CHORD/2 - PROBE_RETRACT ]
+${rapidCmd('X[ X_CHORD/2 - PROBE_RETRACT ]')}
 G4 P0.5
 G10 L20 P0 X0
 
 ; --- 4. PROBE +Y INSIDE TOP WALL (FROM TRUE X CENTER) ---
 G38.2 Y[SEARCH_DIST] F[PROBE_FEED_FAST]
-G0 Y-[PROBE_RETRACT]
+${rapidCmd('Y-[PROBE_RETRACT]')}
 G4 P0.3
 G38.2 Y5 F[PROBE_FEED_SLOW]
 %Y_TOP = posy
-G0 Y-[PROBE_RETRACT]
+${rapidCmd('Y-[PROBE_RETRACT]')}
 G4 P0.3
 
 ; --- 5. PROBE -Y INSIDE BOTTOM WALL ---
 G38.2 Y-[SEARCH_DIST + PROBE_RETRACT] F[PROBE_FEED_FAST]
-G0 Y[PROBE_RETRACT]
+${rapidCmd('Y[PROBE_RETRACT]')}
 G4 P0.3
 G38.2 Y-5 F[PROBE_FEED_SLOW]
 %Y_BTM = posy
-G0 Y[PROBE_RETRACT]
+${rapidCmd('Y[PROBE_RETRACT]')}
 G4 P0.3
 
 ; --- 6. MOVE DIRECTLY TO TRUE Y CENTER & ZERO Y ---
 %Y_CHORD = Y_TOP - Y_BTM
-G0 Y[ Y_CHORD/2 - PROBE_RETRACT ]
+${rapidCmd('Y[ Y_CHORD/2 - PROBE_RETRACT ]')}
 G4 P0.5
 G10 L20 P0 Y0
 
 ; --- 7. HOVER AT ABSOLUTE CENTER (X0 Y0) ---
 G90
-G0 X0 Y0
+${rapidCmd('X0 Y0')}
 
 (MSG, BORE_CENTER_DONE)
 
@@ -366,7 +403,7 @@ G0 X0 Y0
 %BOSS_DIA = ${Number(effectiveDia.toFixed(3))}
 %PROBE_FEED_FAST = ${Number(effectiveFastFeed.toFixed(1))}
 %PROBE_FEED_SLOW = ${Number(effectiveSlowFeed.toFixed(1))}
-%PROBE_RETRACT = ${Number(effectiveRetract.toFixed(3))}
+${hasCustomRapid ? `%RAPID_FEED = ${Number(effectiveRapidFeed.toFixed(1))}\n` : ''}%PROBE_RETRACT = ${Number(effectiveRetract.toFixed(3))}
 %Z_LIFT = ${Number(effectiveZLift.toFixed(3))}
 %MARGIN = 5
 %CLEARANCE = 8
@@ -383,50 +420,50 @@ G21
 
 ; --- 1. PROBE FRONT (-Y) FACE ---
 G38.2 Y[ BOSS_DIA/2 + MARGIN ] F[PROBE_FEED_FAST]
-G0 Y-[PROBE_RETRACT]
+${rapidCmd('Y-[PROBE_RETRACT]')}
 G4 P0.3
 G38.2 Y5 F[PROBE_FEED_SLOW]
 %Y_FRONT = posy
-G0 Y-[PROBE_RETRACT]
+${rapidCmd('Y-[PROBE_RETRACT]')}
 G4 P0.3
-${traverseCmd} Y-[ posy - Y_START ]
+${traverseCmd('Y-[ posy - Y_START ]')}
 G4 P0.3
 
 ; --- 2. TRAVEL AROUND TO RIGHT (+X) SIDE ---
-${traverseCmd} X[ BOSS_DIA/2 + CLEARANCE ]
-${traverseCmd} Y[ (Y_FRONT - Y_START) + BOSS_DIA/2 ]
+${traverseCmd('X[ BOSS_DIA/2 + CLEARANCE ]')}
+${traverseCmd('Y[ (Y_FRONT - Y_START) + BOSS_DIA/2 ]')}
 G4 P0.3
 G38.2 X-[ BOSS_DIA/2 + MARGIN + CLEARANCE ] F[PROBE_FEED_FAST]
-G0 X[PROBE_RETRACT]
+${rapidCmd('X[PROBE_RETRACT]')}
 G4 P0.3
 G38.2 X-5 F[PROBE_FEED_SLOW]
 %X_RIGHT = posx
-G0 X[PROBE_RETRACT]
+${rapidCmd('X[PROBE_RETRACT]')}
 G4 P0.3
 
 ; --- 3. TRAVEL AROUND TO BACK (+Y) SIDE ---
-${traverseCmd} Y[ BOSS_DIA/2 + CLEARANCE ]
-${traverseCmd} X-[ posx - X_START ]
+${traverseCmd('Y[ BOSS_DIA/2 + CLEARANCE ]')}
+${traverseCmd('X-[ posx - X_START ]')}
 G4 P0.3
 G38.2 Y-[ BOSS_DIA/2 + MARGIN + CLEARANCE ] F[PROBE_FEED_FAST]
-G0 Y[PROBE_RETRACT]
+${rapidCmd('Y[PROBE_RETRACT]')}
 G4 P0.3
 G38.2 Y-5 F[PROBE_FEED_SLOW]
 %Y_BACK = posy
-G0 Y[PROBE_RETRACT]
+${rapidCmd('Y[PROBE_RETRACT]')}
 G4 P0.3
 
 ; --- 4. ALIGN WITH TRUE Y CENTER & TRAVEL TO LEFT (-X) SIDE ---
 %Y_TRUE_CENTER = (Y_FRONT + Y_BACK)/2
-${traverseCmd} Y-[ posy - Y_TRUE_CENTER ]
-${traverseCmd} X-[ (posx - X_START) + BOSS_DIA/2 + CLEARANCE ]
+${traverseCmd('Y-[ posy - Y_TRUE_CENTER ]')}
+${traverseCmd('X-[ (posx - X_START) + BOSS_DIA/2 + CLEARANCE ]')}
 G4 P0.3
 G38.2 X[ BOSS_DIA/2 + MARGIN + CLEARANCE ] F[PROBE_FEED_FAST]
-G0 X-[PROBE_RETRACT]
+${rapidCmd('X-[PROBE_RETRACT]')}
 G4 P0.3
 G38.2 X5 F[PROBE_FEED_SLOW]
 %X_LEFT = posx
-G0 X-[PROBE_RETRACT]
+${rapidCmd('X-[PROBE_RETRACT]')}
 G4 P0.3
 
 ; --- 5. COMPUTE TRUE X CENTER & SET WORK OFFSET ---
@@ -437,8 +474,8 @@ G10 L20 P0 X[ posx - X_TRUE_CENTER ] Y[ posy - Y_TRUE_CENTER ]
 ${enableZLift ? `
 ; --- 6. SAFE Z LIFT AND HOVER AT CENTER ---
 G90
-G0 Z[Z_LIFT]
-G0 X0 Y0
+${rapidCmd('Z[Z_LIFT]')}
+${rapidCmd('X0 Y0')}
 ` : ''}
 
 (MSG, BORE_CENTER_DONE)
@@ -669,7 +706,7 @@ G0 X0 Y0
                                 <SettingInput
                                     label="Fast Feed"
                                     value={fastFeed}
-                                    setter={setFastFeed}
+                                    setter={handleFastFeedChange}
                                     unit={feedUnit}
                                     step={isImperial ? "0.5" : "10"}
                                     disabled={isRunning}
@@ -677,7 +714,7 @@ G0 X0 Y0
                                 <SettingInput
                                     label="Slow Feed"
                                     value={slowFeed}
-                                    setter={setSlowFeed}
+                                    setter={handleSlowFeedChange}
                                     unit={feedUnit}
                                     step={isImperial ? "0.1" : "1"}
                                     disabled={isRunning}
@@ -689,7 +726,7 @@ G0 X0 Y0
                                 <SettingInput
                                     label="Retract Distance"
                                     value={retractDist}
-                                    setter={setRetractDist}
+                                    setter={handleRetractDistChange}
                                     unit={lengthUnit}
                                     step={isImperial ? "0.01" : "0.1"}
                                     disabled={isRunning}

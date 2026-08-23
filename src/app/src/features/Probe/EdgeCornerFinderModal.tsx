@@ -6,6 +6,7 @@ import { useWorkspaceState } from 'app/hooks/useWorkspaceState';
 import { useTypedSelector } from 'app/hooks/useTypedSelector';
 import { IMPERIAL_UNITS } from 'app/constants';
 import { in2mm, mm2in } from 'app/lib/units';
+import pubsub from 'pubsub-js';
 import { ModalJogDrawer } from './ModalJogDrawer';
 import './EdgeCornerFinderModal.css';
 
@@ -86,8 +87,28 @@ const EdgeCornerFinderModal: React.FC<ModalProps> = ({
 
     const lengthUnit = isImperial ? 'in' : 'mm';
     const feedUnit = isImperial ? 'in/min' : 'mm/min';
-    const getTipDia = () => {
+    const getStoredTipDia = () => {
         const storedMetric = Number(store.get('widgets.probe.tipDiameter3D', store.get('workspace.probeTipDiameter', 2.0))) || 2.0;
+        return isImperial ? Number(mm2in(storedMetric).toFixed(3)) : storedMetric;
+    };
+
+    const getStoredFastFeed = () => {
+        const storedMetric = Number(store.get('widgets.probe.probeFastFeedrate', 150.0)) || 150.0;
+        return isImperial ? Number(mm2in(storedMetric).toFixed(1)) : storedMetric;
+    };
+
+    const getStoredSlowFeed = () => {
+        const storedMetric = Number(store.get('widgets.probe.probeFeedrate', 75.0)) || 75.0;
+        return isImperial ? Number(mm2in(storedMetric).toFixed(1)) : storedMetric;
+    };
+
+    const getStoredRapidFeed = () => {
+        const storedMetric = Number(store.get('widgets.probe.probeMovementSpeed', 0)) || 0;
+        return isImperial ? Number(mm2in(storedMetric).toFixed(1)) : storedMetric;
+    };
+
+    const getStoredRetractDist = () => {
+        const storedMetric = Number(store.get('widgets.probe.retractionDistance', 2.0)) || 2.0;
         return isImperial ? Number(mm2in(storedMetric).toFixed(3)) : storedMetric;
     };
 
@@ -114,12 +135,58 @@ const EdgeCornerFinderModal: React.FC<ModalProps> = ({
         return savedSelection ? !!savedSelection.probeBottomY : false;
     });
 
-    // Form inputs
-    const [tipDia, setTipDia] = useState<number | ''>(getTipDia);
-    const [fastFeed, setFastFeed] = useState<number>(isImperial ? 6.0 : 150.0);
-    const [slowFeed, setSlowFeed] = useState<number>(isImperial ? 2.0 : 50.0);
-    const [rapidFeed, setRapidFeed] = useState<number>(0);
-    const [retractDist, setRetractDist] = useState<number>(isImperial ? 0.08 : 2.0);
+    // Form inputs synchronized with settings store
+    const [tipDia, setTipDia] = useState<number | ''>(getStoredTipDia);
+    const [fastFeed, setFastFeed] = useState<number | ''>(getStoredFastFeed);
+    const [slowFeed, setSlowFeed] = useState<number | ''>(getStoredSlowFeed);
+    const [rapidFeed, setRapidFeed] = useState<number | ''>(getStoredRapidFeed);
+    const [retractDist, setRetractDist] = useState<number | ''>(getStoredRetractDist);
+
+    const handleTipDiaChange = (val: number | '') => {
+        setTipDia(val);
+        if (typeof val === 'number' && !isNaN(val) && val > 0) {
+            const metricVal = isImperial ? Number(in2mm(val).toFixed(3)) : val;
+            store.set('widgets.probe.tipDiameter3D', metricVal);
+            store.set('workspace.probeTipDiameter', metricVal);
+            pubsub.publish('repopulate');
+        }
+    };
+
+    const handleFastFeedChange = (val: number | '') => {
+        setFastFeed(val);
+        if (typeof val === 'number' && !isNaN(val) && val > 0) {
+            const metricVal = isImperial ? Number(in2mm(val).toFixed(1)) : val;
+            store.set('widgets.probe.probeFastFeedrate', metricVal);
+            pubsub.publish('repopulate');
+        }
+    };
+
+    const handleSlowFeedChange = (val: number | '') => {
+        setSlowFeed(val);
+        if (typeof val === 'number' && !isNaN(val) && val > 0) {
+            const metricVal = isImperial ? Number(in2mm(val).toFixed(1)) : val;
+            store.set('widgets.probe.probeFeedrate', metricVal);
+            pubsub.publish('repopulate');
+        }
+    };
+
+    const handleRapidFeedChange = (val: number | '') => {
+        setRapidFeed(val);
+        if (typeof val === 'number' && !isNaN(val) && val >= 0) {
+            const metricVal = isImperial ? Number(in2mm(val).toFixed(1)) : val;
+            store.set('widgets.probe.probeMovementSpeed', metricVal);
+            pubsub.publish('repopulate');
+        }
+    };
+
+    const handleRetractDistChange = (val: number | '') => {
+        setRetractDist(val);
+        if (typeof val === 'number' && !isNaN(val) && val > 0) {
+            const metricVal = isImperial ? Number(in2mm(val).toFixed(3)) : val;
+            store.set('widgets.probe.retractionDistance', metricVal);
+            pubsub.publish('repopulate');
+        }
+    };
 
     const [isRunning, setIsRunning] = useState<boolean>(false);
     const [dialogState, setDialogState] = useState<'idle' | 'success' | 'failed'>('idle');
@@ -137,21 +204,11 @@ const EdgeCornerFinderModal: React.FC<ModalProps> = ({
     };
 
     useEffect(() => {
-        const storedMetric = Number(store.get('widgets.probe.tipDiameter3D', store.get('workspace.probeTipDiameter', 2.0))) || 2.0;
-
-        if (isImperial) {
-            setFastFeed(6.0);
-            setSlowFeed(2.0);
-            setRapidFeed(0);
-            setRetractDist(0.08);
-            setTipDia(Number(mm2in(storedMetric).toFixed(3)));
-        } else {
-            setFastFeed(150.0);
-            setSlowFeed(50.0);
-            setRapidFeed(0);
-            setRetractDist(2.0);
-            setTipDia(storedMetric);
-        }
+        setTipDia(getStoredTipDia());
+        setFastFeed(getStoredFastFeed());
+        setSlowFeed(getStoredSlowFeed());
+        setRapidFeed(getStoredRapidFeed());
+        setRetractDist(getStoredRetractDist());
         setHasTriggered(false);
         setShowTipBanner(!store.get('widgets.probe.dismissedTipBanner', false));
     }, [isImperial, isOpen]);
@@ -1224,7 +1281,7 @@ const EdgeCornerFinderModal: React.FC<ModalProps> = ({
                                 <SettingInput
                                     label="Fast Search Feed"
                                     value={fastFeed}
-                                    setter={setFastFeed}
+                                    setter={handleFastFeedChange}
                                     unit={feedUnit}
                                     step={isImperial ? '0.5' : '10'}
                                     disabled={isRunning}
@@ -1232,18 +1289,19 @@ const EdgeCornerFinderModal: React.FC<ModalProps> = ({
                                 <SettingInput
                                     label="Slow Precision Feed"
                                     value={slowFeed}
-                                    setter={setSlowFeed}
+                                    setter={handleSlowFeedChange}
                                     unit={feedUnit}
                                     step={isImperial ? '0.1' : '1'}
                                     disabled={isRunning}
                                 />
                                 <SettingInput
-                                    label="Rapids Move Feed (0 = Max)"
+                                    label="Probe Movement Speed (0 = Max)"
                                     value={rapidFeed}
-                                    setter={setRapidFeed}
+                                    setter={handleRapidFeedChange}
                                     unit={feedUnit}
                                     step={isImperial ? '1' : '50'}
                                     disabled={isRunning}
+                                    title="Feed rate for retract/reposition moves during probing. If 0, these moves use rapid (G0 / max machine speed). If set, they use a controlled feed move (G1) at this speed."
                                 />
                             </div>
 
@@ -1252,7 +1310,7 @@ const EdgeCornerFinderModal: React.FC<ModalProps> = ({
                                 <SettingInput
                                     label="Retract Distance"
                                     value={retractDist}
-                                    setter={setRetractDist}
+                                    setter={handleRetractDistChange}
                                     unit={lengthUnit}
                                     step={isImperial ? '0.01' : '0.1'}
                                     disabled={isRunning}

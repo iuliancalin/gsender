@@ -897,7 +897,7 @@ export const SettingsMenu: SettingsMenuSection[] = [
                         label: 'Probe Movement Speed',
                         key: 'widgets.probe.probeMovementSpeed',
                         description:
-                            'Feed rate for retract/reposition moves during probing. If 0, these moves use rapid (G0). If set, they use a controlled feed move (G1) at this speed instead. (Default 0)',
+                            'Feed rate for retract/reposition moves during probing. If 0, these moves use rapid (G0 / max machine speed). If set, they use a controlled feed move (G1) at this speed instead. (0 = max speed, Default 0)',
                         type: 'number',
                         min: 0,
                         unit: 'mm/min',

@@ -6,6 +6,7 @@ import { useWorkspaceState } from 'app/hooks/useWorkspaceState';
 import { useTypedSelector } from 'app/hooks/useTypedSelector';
 import { IMPERIAL_UNITS } from 'app/constants';
 import { in2mm, mm2in } from 'app/lib/units';
+import pubsub from 'pubsub-js';
 import { ModalJogDrawer } from './ModalJogDrawer';
 import './MaterialCenterFinderModal.css';
 
@@ -85,37 +86,84 @@ const MaterialCenterFinderModal: React.FC<ModalProps> = ({
     const lengthUnit = isImperial ? 'in' : 'mm';
     const feedUnit = isImperial ? 'in/min' : 'mm/min';
 
-    const getTipDia = () => {
+    const getStoredTipDia = () => {
         const storedMetric = Number(store.get('widgets.probe.tipDiameter3D', store.get('workspace.probeTipDiameter', 2.0))) || 2.0;
         return isImperial ? Number(mm2in(storedMetric).toFixed(3)) : storedMetric;
     };
 
+    const getStoredFastFeed = () => {
+        const storedMetric = Number(store.get('widgets.probe.probeFastFeedrate', 150.0)) || 150.0;
+        return isImperial ? Number(mm2in(storedMetric).toFixed(1)) : storedMetric;
+    };
+
+    const getStoredSlowFeed = () => {
+        const storedMetric = Number(store.get('widgets.probe.probeFeedrate', 75.0)) || 75.0;
+        return isImperial ? Number(mm2in(storedMetric).toFixed(1)) : storedMetric;
+    };
+
+    const getStoredRetractDist = () => {
+        const storedMetric = Number(store.get('widgets.probe.retractionDistance', 2.0)) || 2.0;
+        return isImperial ? Number(mm2in(storedMetric).toFixed(3)) : storedMetric;
+    };
+
+    const getStoredSafeZ = () => {
+        const storedMetric = Number(store.get('widgets.probe.zRetractNormal', 5.0)) || 5.0;
+        return isImperial ? Number(mm2in(storedMetric).toFixed(2)) : storedMetric;
+    };
+
     const [sizeX, setSizeX] = useState<number | ''>('');
     const [sizeY, setSizeY] = useState<number | ''>('');
-    const [fastFeed, setFastFeed] = useState<number>(isImperial ? 6.0 : 150.0);
-    const [slowFeed, setSlowFeed] = useState<number>(isImperial ? 2.0 : 50.0);
-    const [retractDist, setRetractDist] = useState<number>(isImperial ? 0.08 : 2.0);
-    const [safeZ, setSafeZ] = useState<number>(isImperial ? 0.2 : 5.0);
-    const [tipDia, setTipDia] = useState<number | ''>(getTipDia);
+    const [fastFeed, setFastFeed] = useState<number | ''>(getStoredFastFeed);
+    const [slowFeed, setSlowFeed] = useState<number | ''>(getStoredSlowFeed);
+    const [retractDist, setRetractDist] = useState<number | ''>(getStoredRetractDist);
+    const [safeZ, setSafeZ] = useState<number | ''>(getStoredSafeZ);
+    const [tipDia, setTipDia] = useState<number | ''>(getStoredTipDia);
+
+    const handleFastFeedChange = (val: number | '') => {
+        setFastFeed(val);
+        if (typeof val === 'number' && !isNaN(val) && val > 0) {
+            const metricVal = isImperial ? Number(in2mm(val).toFixed(1)) : val;
+            store.set('widgets.probe.probeFastFeedrate', metricVal);
+            pubsub.publish('repopulate');
+        }
+    };
+
+    const handleSlowFeedChange = (val: number | '') => {
+        setSlowFeed(val);
+        if (typeof val === 'number' && !isNaN(val) && val > 0) {
+            const metricVal = isImperial ? Number(in2mm(val).toFixed(1)) : val;
+            store.set('widgets.probe.probeFeedrate', metricVal);
+            pubsub.publish('repopulate');
+        }
+    };
+
+    const handleRetractDistChange = (val: number | '') => {
+        setRetractDist(val);
+        if (typeof val === 'number' && !isNaN(val) && val > 0) {
+            const metricVal = isImperial ? Number(in2mm(val).toFixed(3)) : val;
+            store.set('widgets.probe.retractionDistance', metricVal);
+            pubsub.publish('repopulate');
+        }
+    };
+
+    const handleSafeZChange = (val: number | '') => {
+        setSafeZ(val);
+        if (typeof val === 'number' && !isNaN(val) && val > 0) {
+            const metricVal = isImperial ? Number(in2mm(val).toFixed(2)) : val;
+            store.set('widgets.probe.zRetractNormal', metricVal);
+            pubsub.publish('repopulate');
+        }
+    };
+
     const [isRunning, setIsRunning] = useState<boolean>(false);
     const [dialogState, setDialogState] = useState<'idle' | 'success' | 'failed'>('idle');
 
     useEffect(() => {
-        const storedMetric = Number(store.get('widgets.probe.tipDiameter3D', store.get('workspace.probeTipDiameter', 2.0))) || 2.0;
-
-        if (isImperial) {
-            setFastFeed(6.0);
-            setSlowFeed(2.0);
-            setRetractDist(0.08);
-            setSafeZ(0.2);
-            setTipDia(Number(mm2in(storedMetric).toFixed(3)));
-        } else {
-            setFastFeed(150.0);
-            setSlowFeed(50.0);
-            setRetractDist(2.0);
-            setSafeZ(5.0);
-            setTipDia(storedMetric);
-        }
+        setFastFeed(getStoredFastFeed());
+        setSlowFeed(getStoredSlowFeed());
+        setRetractDist(getStoredRetractDist());
+        setSafeZ(getStoredSafeZ());
+        setTipDia(getStoredTipDia());
         setHasTriggered(false);
     }, [isImperial, isOpen]);
     const isRunningRef = useRef<boolean>(false);
@@ -469,8 +517,8 @@ G10 L20 P0 Y0
 
                             <div className="material-center-finder-form-group">
                                 <div className="material-center-finder-form-group-label">Probe Feedrates</div>
-                                <SettingInput label="Fast Feed" value={fastFeed} setter={setFastFeed} unit={feedUnit} step={isImperial ? "0.5" : "10"} disabled={isRunning} />
-                                <SettingInput label="Slow Feed" value={slowFeed} setter={setSlowFeed} unit={feedUnit} step={isImperial ? "0.1" : "1"} disabled={isRunning} />
+                                <SettingInput label="Fast Feed" value={fastFeed} setter={handleFastFeedChange} unit={feedUnit} step={isImperial ? "0.5" : "10"} disabled={isRunning} />
+                                <SettingInput label="Slow Feed" value={slowFeed} setter={handleSlowFeedChange} unit={feedUnit} step={isImperial ? "0.1" : "1"} disabled={isRunning} />
                             </div>
 
                             <div className="material-center-finder-form-group">
@@ -488,8 +536,8 @@ G10 L20 P0 Y0
                                     <span>🔒</span>
                                     <span>Tip diameter is locked. Change in <strong>Probe Settings</strong> or <strong>Stylus Calibration</strong>.</span>
                                 </div>
-                                <SettingInput label="Retract Distance" value={retractDist} setter={setRetractDist} unit={lengthUnit} step={isImperial ? "0.01" : "0.1"} disabled={isRunning} />
-                                <SettingInput label="Safe Z" value={safeZ} setter={setSafeZ} unit={lengthUnit} step={isImperial ? "0.05" : "0.5"} disabled={isRunning} />
+                                <SettingInput label="Retract Distance" value={retractDist} setter={handleRetractDistChange} unit={lengthUnit} step={isImperial ? "0.01" : "0.1"} disabled={isRunning} />
+                                <SettingInput label="Safe Z" value={safeZ} setter={handleSafeZChange} unit={lengthUnit} step={isImperial ? "0.05" : "0.5"} disabled={isRunning} />
                             </div>
                         </div>
                     </div>

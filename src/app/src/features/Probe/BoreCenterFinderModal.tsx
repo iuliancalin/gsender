@@ -291,7 +291,8 @@ const BoreCenterFinderModal: React.FC<ModalProps> = ({
     const isFormValid =
         typeof featureDia === 'number' &&
         !isNaN(featureDia) &&
-        featureDia > 0;
+        featureDia > 0 &&
+        (probeMode === 'bore' || (typeof zLiftHeight === 'number' && !isNaN(zLiftHeight) && zLiftHeight > 0));
 
     const handleRun = () => {
         if (!isFormValid) {
@@ -415,7 +416,7 @@ ${rapidCmd('X0 Y0')}
         } else {
             macroScript = `
 ; =========================================
-; BOSS / CYLINDER CENTER FINDER MACRO
+; BOSS / CYLINDER CENTER FINDER MACRO (FRONT-START Z-HOP)
 ; =========================================
 %wait
 
@@ -424,19 +425,23 @@ ${rapidCmd('X0 Y0')}
 %PROBE_FEED_SLOW = ${Number(effectiveSlowFeed.toFixed(1))}
 ${hasCustomRapid ? `%RAPID_FEED = ${Number(effectiveRapidFeed.toFixed(1))}\n` : ''}%PROBE_RETRACT = ${Number(effectiveRetract.toFixed(3))}
 %Z_LIFT = ${Number(effectiveZLift.toFixed(3))}
-%CLEARANCE = 12
+%CLEARANCE = 10
+%SEARCH_DIST = BOSS_DIA/2 + CLEARANCE + 10
 
 %UNITS=modal.units
 %DISTANCE=modal.distance
 
-; --- RECORD START POINT (FRONT -Y IN OPEN AIR) ---
+; --- RECORD START POSITION IN FRONT (-Y) AT PROBING DEPTH ---
 %X_START = posx
 %Y_START = posy
+%Z_DEPTH = posz
+%Z_SAFE = posz + Z_LIFT
 
-; --- 1. PROBE FRONT (-Y) FACE ---
-G91
 G21
-G38.2 Y[ BOSS_DIA/2 + 10 ] F[PROBE_FEED_FAST]
+
+; --- 1. PROBE FRONT (-Y) FACE DIRECTLY AT DEPTH ---
+G91
+G38.2 Y[SEARCH_DIST] F[PROBE_FEED_FAST]
 ${rapidCmd('Y-[PROBE_RETRACT]')}
 G4 P0.3
 G38.2 Y5 F[PROBE_FEED_SLOW]
@@ -444,40 +449,18 @@ G38.2 Y5 F[PROBE_FEED_SLOW]
 ${rapidCmd('Y-[PROBE_RETRACT]')}
 G4 P0.3
 
-; Return to safe front line in open air
+; --- 2. LIFT, HOP ACROSS TOP & PROBE BACK (+Y) FACE ---
 G90
-${traverseCmd('Y[Y_START]')}
+${rapidCmd('Z[Z_SAFE]')}
+G4 P0.3
+${rapidCmd('Y[Y_FRONT + BOSS_DIA + CLEARANCE]')}
+G4 P0.3
+${rapidCmd('Z[Z_DEPTH]')}
 G4 P0.3
 
-; --- 2. TRAVEL AROUND TO RIGHT (+X) SIDE ---
-; Move X past right edge in open air, then move Y to estimated center
-${traverseCmd('X[X_START + BOSS_DIA/2 + CLEARANCE]')}
-${traverseCmd('Y[Y_FRONT + BOSS_DIA/2]')}
-G4 P0.3
-
-; Probe Left (-X) towards right face
+; Probe Front (-Y) into Back Face
 G91
-G38.2 X-[ BOSS_DIA/2 + CLEARANCE + 10 ] F[PROBE_FEED_FAST]
-${rapidCmd('X[PROBE_RETRACT]')}
-G4 P0.3
-G38.2 X-5 F[PROBE_FEED_SLOW]
-%X_RIGHT = posx
-${rapidCmd('X[PROBE_RETRACT]')}
-G4 P0.3
-
-; Estimated Center X calculated from true right edge
-%X_EST_CENTER = X_RIGHT - BOSS_DIA/2
-
-; --- 3. TRAVEL AROUND TO BACK (+Y) SIDE ---
-; Move Y past back edge into open air, then move X to estimated center
-G90
-${traverseCmd('Y[Y_FRONT + BOSS_DIA + CLEARANCE]')}
-${traverseCmd('X[X_EST_CENTER]')}
-G4 P0.3
-
-; Probe Front (-Y) towards back face
-G91
-G38.2 Y-[ BOSS_DIA/2 + CLEARANCE + 10 ] F[PROBE_FEED_FAST]
+G38.2 Y-[CLEARANCE + 15] F[PROBE_FEED_FAST]
 ${rapidCmd('Y[PROBE_RETRACT]')}
 G4 P0.3
 G38.2 Y-5 F[PROBE_FEED_SLOW]
@@ -485,19 +468,22 @@ G38.2 Y-5 F[PROBE_FEED_SLOW]
 ${rapidCmd('Y[PROBE_RETRACT]')}
 G4 P0.3
 
-; True Center Y is now EXACT
-%Y_TRUE_CENTER = (Y_FRONT + Y_BACK)/2
-
-; --- 4. TRAVEL AROUND TO LEFT (-X) SIDE ---
-; Move X past left edge while staying behind the part in open air, then move Y to true center
+; --- 3. LIFT TO SAFE HEIGHT & ALIGN TO TRUE Y CENTER ---
 G90
-${traverseCmd('X[X_RIGHT - BOSS_DIA - CLEARANCE]')}
-${traverseCmd('Y[Y_TRUE_CENTER]')}
+${rapidCmd('Z[Z_SAFE]')}
+%Y_TRUE_CENTER = (Y_FRONT + Y_BACK)/2
+${rapidCmd('Y[Y_TRUE_CENTER]')}
 G4 P0.3
 
-; Probe Right (+X) towards left face
+; --- 4. HOP TO LEFT (-X) FACE AT PROBING DEPTH ---
+${rapidCmd('X[X_START - (BOSS_DIA/2 + CLEARANCE)]')}
+G4 P0.3
+${rapidCmd('Z[Z_DEPTH]')}
+G4 P0.3
+
+; Probe Right (+X) into Left Face
 G91
-G38.2 X[ BOSS_DIA/2 + CLEARANCE + 10 ] F[PROBE_FEED_FAST]
+G38.2 X[CLEARANCE + 15] F[PROBE_FEED_FAST]
 ${rapidCmd('X-[PROBE_RETRACT]')}
 G4 P0.3
 G38.2 X5 F[PROBE_FEED_SLOW]
@@ -505,28 +491,34 @@ G38.2 X5 F[PROBE_FEED_SLOW]
 ${rapidCmd('X-[PROBE_RETRACT]')}
 G4 P0.3
 
-; True Center X is now EXACT
-%X_TRUE_CENTER = (X_RIGHT + X_LEFT)/2
-
-; Step out in -X for clearance
+; --- 5. LIFT, HOP ACROSS TOP & PROBE RIGHT (+X) FACE ---
 G90
-${traverseCmd('X[X_LEFT - CLEARANCE]')}
+${rapidCmd('Z[Z_SAFE]')}
+G4 P0.3
+${rapidCmd('X[X_LEFT + BOSS_DIA + CLEARANCE]')}
+G4 P0.3
+${rapidCmd('Z[Z_DEPTH]')}
+G4 P0.3
+
+; Probe Left (-X) into Right Face
+G91
+G38.2 X-[CLEARANCE + 15] F[PROBE_FEED_FAST]
+${rapidCmd('X[PROBE_RETRACT]')}
+G4 P0.3
+G38.2 X-5 F[PROBE_FEED_SLOW]
+%X_RIGHT = posx
+${rapidCmd('X[PROBE_RETRACT]')}
+G4 P0.3
+
+; --- 6. LIFT, MOVE TO TRUE CENTER & ZERO WORK OFFSET ---
+G90
+${rapidCmd('Z[Z_SAFE]')}
+%X_TRUE_CENTER = (X_LEFT + X_RIGHT)/2
+${rapidCmd('X[X_TRUE_CENTER] Y[Y_TRUE_CENTER]')}
 G4 P0.5
 
-; Zero X and Y to true center
-G10 L20 P0 X[ posx - X_TRUE_CENTER ] Y[ posy - Y_TRUE_CENTER ]
-
-${enableZLift ? `
-; --- 5. SAFE Z LIFT AND HOVER AT CENTER ---
-G90
-${rapidCmd('Z[Z_LIFT]')}
-${rapidCmd('X0 Y0')}
-` : `
-; --- 5. RETURN TO FRONT IN OPEN AIR ---
-G90
-${traverseCmd('Y[Y_START]')}
-${traverseCmd('X0')}
-`}
+; Zero work offset to exact center
+G10 L20 P0 X0 Y0
 
 (MSG, BORE_CENTER_DONE)
 
@@ -615,7 +607,7 @@ ${traverseCmd('X0')}
                     <div className="bore-center-finder-subtitle">
                         {probeMode === 'bore'
                             ? 'Center probe roughly inside the hole and enter estimated diameter. Probes outward to find true center and zero X and Y.'
-                            : 'Position probe in open air in front of cylinder (-Y) at probing depth. Probes around cylinder to find true center and zero X and Y.'}
+                            : 'Position probe in open air in front of cylinder (-Y) at probing depth. Probes with safe Z-hops (Y then X) to find true center and zero X and Y.'}
                     </div>
 
                     <div className="bore-center-finder-body">
@@ -653,14 +645,9 @@ ${traverseCmd('X0')}
                             {/* BOSS DIAGRAM LAYER (Fades smoothly) */}
                             <div className={`bore-center-diagram-layer boss-layer ${probeMode === 'boss' ? 'active' : 'inactive'}`}>
                                 <div className="bore-center-finder-boss-cylinder" />
-                                <div className="bore-center-finder-boss-start-point" title="Start probe in open air here (-Y front)">
+                                <div className="bore-center-finder-boss-start-point" title="Start probe in open air here (-Y front at probing depth)">
                                     <span className="bore-center-finder-boss-start-dot" />
-                                    <span className="bore-center-finder-boss-start-text">Start (-Y)</span>
-                                </div>
-
-                                <div className="bore-center-finder-arrow-label top inward">
-                                    <div className="bore-center-finder-arrow-dot" />
-                                    <span className="bore-center-finder-arrow-text">3. +Y Back ↓</span>
+                                    <span className="bore-center-finder-boss-start-text">Start (-Y Front)</span>
                                 </div>
 
                                 <div className="bore-center-finder-arrow-label bottom inward">
@@ -668,14 +655,19 @@ ${traverseCmd('X0')}
                                     <span className="bore-center-finder-arrow-text">1. -Y Front ↑</span>
                                 </div>
 
+                                <div className="bore-center-finder-arrow-label top inward">
+                                    <div className="bore-center-finder-arrow-dot" />
+                                    <span className="bore-center-finder-arrow-text">2. +Y Back ↓</span>
+                                </div>
+
                                 <div className="bore-center-finder-arrow-label left inward">
-                                    <span className="bore-center-finder-arrow-text">4. -X Left →</span>
+                                    <span className="bore-center-finder-arrow-text">3. -X Left →</span>
                                     <div className="bore-center-finder-arrow-dot" />
                                 </div>
 
                                 <div className="bore-center-finder-arrow-label right inward">
                                     <div className="bore-center-finder-arrow-dot" />
-                                    <span className="bore-center-finder-arrow-text">2. +X Right ←</span>
+                                    <span className="bore-center-finder-arrow-text">4. +X Right ←</span>
                                 </div>
                             </div>
 
@@ -683,36 +675,23 @@ ${traverseCmd('X0')}
                             {probeMode === 'boss' && (
                                 <div className="bore-center-boss-zlift-bar">
                                     <div className="bore-center-boss-zlift-main-row">
-                                        <label className="bore-center-finder-checkbox-label">
+                                        <span className="bore-center-boss-zlift-label">🦘 Z-Hop Clearance Height:</span>
+                                        <div className="bore-center-boss-zlift-input-group">
                                             <input
-                                                type="checkbox"
-                                                checked={enableZLift}
-                                                onChange={(e) => setEnableZLift(e.target.checked)}
+                                                type="number"
+                                                value={zLiftHeight}
+                                                onChange={(e) => setZLiftHeight(e.target.value === '' ? '' : Number(e.target.value))}
                                                 disabled={isRunning}
+                                                step={isImperial ? "0.05" : "1"}
+                                                className="bore-center-boss-zlift-input"
                                             />
-                                            <span>Lift Z on finish</span>
-                                        </label>
-                                        {enableZLift && (
-                                            <div className="bore-center-boss-zlift-input-group">
-                                                <span className="bore-center-boss-zlift-label">Height:</span>
-                                                <input
-                                                    type="number"
-                                                    value={zLiftHeight}
-                                                    onChange={(e) => setZLiftHeight(e.target.value)}
-                                                    disabled={isRunning}
-                                                    step={isImperial ? "0.05" : "1"}
-                                                    className="bore-center-boss-zlift-input"
-                                                />
-                                                <span className="bore-center-boss-zlift-unit">{lengthUnit}</span>
-                                            </div>
-                                        )}
+                                            <span className="bore-center-boss-zlift-unit">{lengthUnit}</span>
+                                        </div>
                                     </div>
-                                    <div className={`bore-center-boss-zlift-note ${enableZLift ? 'active' : 'inactive'}`}>
-                                        <span className="bore-center-boss-zlift-note-icon">{enableZLift ? '✓' : 'ℹ️'}</span>
+                                    <div className="bore-center-boss-zlift-note active">
+                                        <span className="bore-center-boss-zlift-note-icon">ℹ️</span>
                                         <span>
-                                            {enableZLift
-                                                ? 'Probe will lift safely above cylinder and rapid to X0 Y0.'
-                                                : 'Machine will zero X/Y and stay at last edge at current Z depth.'}
+                                            Height probe will lift above current Z depth to safely hop over the boss during probing.
                                         </span>
                                     </div>
                                 </div>

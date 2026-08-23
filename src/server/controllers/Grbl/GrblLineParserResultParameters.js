@@ -32,7 +32,8 @@ class GrblLineParserResultParameters {
         const value = r[2];
         const payload = {
             name: name,
-            value: ''
+            value: '',
+            raw: line
         };
 
         // [Gxx:0.000]

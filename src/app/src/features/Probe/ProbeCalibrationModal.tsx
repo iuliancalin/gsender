@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
-import controller from 'app/lib/controller';
+import controller, { addControllerEvents, removeControllerEvents } from 'app/lib/controller';
 import store from 'app/store';
 import { useWorkspaceState } from 'app/hooks/useWorkspaceState';
 import { useTypedSelector } from 'app/hooks/useTypedSelector';
@@ -72,12 +72,14 @@ const ProbeCalibrationModal: React.FC<ModalProps> = ({
     onRunGcode,
     connectivityTest = false,
 }) => {
-    const { probePinStatus, activeState } = useTypedSelector((state) => ({
+    const { probePinStatus, activeState, wpos } = useTypedSelector((state) => ({
         probePinStatus: state.controller.state.status?.pinState.P ?? false,
         activeState: state.controller.state.status?.activeState ?? 'Idle',
+        wpos: state.controller.state.status?.wpos ?? { x: '0', y: '0', z: '0' },
     }));
     const isAlarm = activeState === 'Alarm' || activeState === 'Hold';
     const [hasTriggered, setHasTriggered] = useState<boolean>(false);
+    const startCenterRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
     useEffect(() => {
         if (probePinStatus) {
@@ -101,7 +103,7 @@ const ProbeCalibrationModal: React.FC<ModalProps> = ({
     const [nominalTipDia, setNominalTipDia] = useState<number | ''>(getStoredNominal);
     const [fastFeed, setFastFeed] = useState<number | ''>(isImperial ? 6.0 : 150.0);
     const [secondaryFeed, setSecondaryFeed] = useState<number | ''>(isImperial ? 2.0 : 50.0);
-    const [slowFeed, setSlowFeed] = useState<number | ''>(isImperial ? 1.2 : 30.0); // 30 mm/min ultra-slow precision
+    const [slowFeed, setSlowFeed] = useState<number | ''>(isImperial ? 2.0 : 50.0); // 50 mm/min precision calibration
     const [retractDist, setRetractDist] = useState<number | ''>(isImperial ? 0.08 : 2.0);
 
     const [isRunning, setIsRunning] = useState<boolean>(false);
@@ -117,14 +119,14 @@ const ProbeCalibrationModal: React.FC<ModalProps> = ({
             setNominalTipDia(Number(mm2in(2.0).toFixed(4)));
             setFastFeed(6.0);
             setSecondaryFeed(2.0);
-            setSlowFeed(1.2);
+            setSlowFeed(2.0);
             setRetractDist(0.08);
         } else {
             setRingDia(20.0);
             setNominalTipDia(2.0);
             setFastFeed(150.0);
             setSecondaryFeed(50.0);
-            setSlowFeed(30.0);
+            setSlowFeed(50.0);
             setRetractDist(2.0);
         }
         setCalResult(null);
@@ -207,65 +209,124 @@ const ProbeCalibrationModal: React.FC<ModalProps> = ({
         const handleSerialData = (data: any) => {
             let raw = '';
             if (typeof data === 'string') raw = data;
-            else if (data && typeof data === 'object') raw = data.line || data.data || JSON.stringify(data);
+            else if (data && typeof data === 'object') raw = data.line || data.data || data.raw || data.message || JSON.stringify(data);
 
-            if (raw && raw.includes('[PRB:')) {
-                // Parse [PRB:X,Y,Z:1]
-                const match = raw.match(/\[PRB:([-\d.]+),([-\d.]+),([-\d.]+):/);
-                if (match) {
-                    const x = parseFloat(match[1]);
-                    const y = parseFloat(match[2]);
-                    if (isRunningRef.current) {
-                        touchCountRef.current = (touchCountRef.current || 0) + 1;
-                        const count = touchCountRef.current;
-                        if (count === 1) setActiveTouch('right');
-                        else if (count === 2) setActiveTouch('left');
-                        else if (count === 3) setActiveTouch('top');
-                        else if (count === 4) {
-                            setActiveTouch('bottom');
-                            setActivePhase('pass2');
-                        } else if (count === 5) {
-                            setActiveTouch('right');
+            if (raw) {
+                if (raw.includes('CAL_STAGE_1_DONE') || raw.includes('CAL_STAGE_2')) {
+                    setActivePhase('pass2');
+                } else if (raw.includes('CAL_STAGE_2_DONE') || raw.includes('CAL_STAGE_3')) {
+                    setActivePhase('pass3');
+                } else if (raw.includes('CAL_STAGE_1')) {
+                    setActivePhase('pass1');
+                }
+
+                if (raw.includes('CAL_XR:')) {
+                    const match = raw.match(/CAL_XR:([-\d.]+)/);
+                    if (match) {
+                        probePointsRef.current.x_right = parseFloat(match[1]);
+                    }
+                    setActiveTouch('right');
+                } else if (raw.includes('CAL_XL:')) {
+                    const match = raw.match(/CAL_XL:([-\d.]+)/);
+                    if (match) {
+                        probePointsRef.current.x_left = parseFloat(match[1]);
+                    }
+                    setActiveTouch('left');
+                } else if (raw.includes('CAL_YT:')) {
+                    const match = raw.match(/CAL_YT:([-\d.]+)/);
+                    if (match) {
+                        probePointsRef.current.y_top = parseFloat(match[1]);
+                    }
+                    setActiveTouch('top');
+                } else if (raw.includes('CAL_YB:')) {
+                    const match = raw.match(/CAL_YB:([-\d.]+)/);
+                    if (match) {
+                        probePointsRef.current.y_bottom = parseFloat(match[1]);
+                    }
+                    setActiveTouch('bottom');
+                }
+
+                if (raw.includes('[PRB:') && isRunningRef.current) {
+                    touchCountRef.current = (touchCountRef.current || 0) + 1;
+                    const count = touchCountRef.current;
+
+                    if (count < 8) {
+                        setActivePhase('pass1');
+                    } else if (count === 8) {
+                        // Pass 1 all 4 walls probed: advance to Pass 2 as machine returns to center
+                        setTimeout(() => {
+                            if (isRunningRef.current) {
+                                setActivePhase('pass2');
+                                setActiveTouch('none');
+                            }
+                        }, 700);
+                    } else if (count < 16) {
+                        setActivePhase('pass2');
+                    } else if (count === 16) {
+                        // Pass 2 all 4 walls probed: advance to Pass 3 as machine returns to center
+                        setTimeout(() => {
+                            if (isRunningRef.current) {
+                                setActivePhase('pass3');
+                                setActiveTouch('none');
+                            }
+                        }, 900);
+                    } else if (count < 24) {
+                        setActivePhase('pass3');
+                    } else if (count >= 24) {
+                        // Pass 3 measurement completed: finish calibration as machine returns to center
+                        setTimeout(() => {
+                            if (isRunningRef.current) {
+                                finishCalibration();
+                            }
+                        }, 900);
+                    }
+
+                    const mod = count % 8;
+                    if (mod === 1 || mod === 2) setActiveTouch('right');
+                    else if (mod === 3 || mod === 4) setActiveTouch('left');
+                    else if (mod === 5 || mod === 6) setActiveTouch('top');
+                    else if (mod === 7 || mod === 0) setActiveTouch('bottom');
+
+                    const match = raw.match(/\[PRB:([-\d.]+),([-\d.]+),([-\d.]+):/);
+                    if (match) {
+                        const x = parseFloat(match[1]);
+                        const y = parseFloat(match[2]);
+
+                        // Capture exact Stage 3 measurement touches
+                        if (count === 17 || count === 18) {
                             probePointsRef.current.x_right = x;
-                        } else if (count === 6) {
-                            setActiveTouch('left');
+                        } else if (count === 19 || count === 20) {
                             probePointsRef.current.x_left = x;
-                        } else if (count === 7) {
-                            setActiveTouch('top');
+                        } else if (count === 21 || count === 22) {
                             probePointsRef.current.y_top = y;
-                        } else if (count === 8) {
-                            setActiveTouch('bottom');
+                        } else if (count === 23 || count === 24) {
                             probePointsRef.current.y_bottom = y;
+                        } else if (count >= 17) {
+                            const s3 = count - 16;
+                            if (s3 === 1 || s3 === 2) probePointsRef.current.x_right = x;
+                            else if (s3 === 3 || s3 === 4) probePointsRef.current.x_left = x;
+                            else if (s3 === 5 || s3 === 6) probePointsRef.current.y_top = y;
+                            else if (s3 === 7 || s3 === 8) probePointsRef.current.y_bottom = y;
                         }
                     }
                 }
-            }
 
-            if (raw && raw.includes('CALIBRATION_PROBE_DONE')) {
-                finishCalibration();
+                if (raw.includes('CALIBRATION_PROBE_DONE')) {
+                    finishCalibration();
+                }
             }
         };
 
-        if (controller) {
-            if (typeof controller.on === 'function') {
-                controller.on('serialport:read', handleSerialData);
-                controller.on('feeder:status', handleSerialData);
-                controller.on('message', handleSerialData);
-            }
-        }
+        const events = {
+            'serialport:read': handleSerialData,
+            'feeder:status': handleSerialData,
+            'message': handleSerialData,
+        };
+
+        addControllerEvents(events);
 
         return () => {
-            if (controller) {
-                if (typeof controller.off === 'function') {
-                    controller.off('serialport:read', handleSerialData);
-                    controller.off('feeder:status', handleSerialData);
-                    controller.off('message', handleSerialData);
-                } else if (typeof (controller as any).removeListener === 'function') {
-                    (controller as any).removeListener('serialport:read', handleSerialData);
-                    (controller as any).removeListener('feeder:status', handleSerialData);
-                    (controller as any).removeListener('message', handleSerialData);
-                }
-            }
+            removeControllerEvents(events);
         };
     }, [ringDia, nominalTipDia]);
 
@@ -314,6 +375,10 @@ const ProbeCalibrationModal: React.FC<ModalProps> = ({
         const effectiveSlowFeed = isImperial ? in2mm(Number(slowFeed)) : Number(slowFeed);
         const effectiveRetract = isImperial ? in2mm(Number(retractDist)) : Number(retractDist);
 
+        startCenterRef.current = {
+            x: parseFloat(wpos.x) || 0,
+            y: parseFloat(wpos.y) || 0,
+        };
         probePointsRef.current = {};
         touchCountRef.current = 0;
         isRunningRef.current = true;
@@ -325,7 +390,7 @@ const ProbeCalibrationModal: React.FC<ModalProps> = ({
 
         const macroScript = `
 ; ==============================================================
-; 3D PROBE 2-PASS PRECISION STYLUS CALIBRATION ROUTINE
+; 3D PROBE 3-PASS PRECISION STYLUS CALIBRATION ROUTINE
 ; ==============================================================
 %wait
 %RING_DIA = ${Number(effectiveRingDia.toFixed(3))}
@@ -341,87 +406,216 @@ const ProbeCalibrationModal: React.FC<ModalProps> = ({
 G91
 G21
 
+; --- RECORD ESTIMATED START CENTER ---
+%X_START = posx
+%Y_START = posy
+
 ; ==============================================================
-; PASS 1: ROUGH CENTER SEARCH & ALIGNMENT
+; PASS 1: ROUGH CENTER SEARCH & ALIGNMENT (Rapids: 1000 mm/min)
 ; ==============================================================
+(MSG, CAL_STAGE_1)
+
 ; --- 1. Probe +X (Right) ---
 G38.2 X[SEARCH_DIST] F[PROBE_FEED_FAST]
-G0 X-[PROBE_RETRACT]
+G1 X-[PROBE_RETRACT] F1000
 G4 P0.3
 G38.2 X5 F[PROBE_FEED_SECOND]
 %X_RIGHT1 = posx
-G0 X-[PROBE_RETRACT]
+G1 X-[PROBE_RETRACT] F1000
 G4 P0.3
 
+; Return to estimated X center before searching -X
+G90
+G1 X[X_START] F1000
+G4 P0.3
+G91
+
 ; --- 2. Probe -X (Left) ---
-G38.2 X-[SEARCH_DIST + PROBE_RETRACT] F[PROBE_FEED_FAST]
-G0 X[PROBE_RETRACT]
+G38.2 X-[SEARCH_DIST] F[PROBE_FEED_FAST]
+G1 X[PROBE_RETRACT] F1000
 G4 P0.3
 G38.2 X-5 F[PROBE_FEED_SECOND]
 %X_LEFT1 = posx
-G0 X[PROBE_RETRACT]
+G1 X[PROBE_RETRACT] F1000
 G4 P0.3
 
-; --- Center directly on X ---
-%X_CHORD1 = X_RIGHT1 - X_LEFT1
-G0 X[ X_CHORD1/2 - PROBE_RETRACT ]
+; --- Center directly on X & Zero X ---
+%X_CENTER1 = (X_RIGHT1 + X_LEFT1) / 2
+G90
+G1 X[X_CENTER1] F1000
 G4 P0.5
 G10 L20 P0 X0
+G91
 
 ; --- 3. Probe +Y (Top) from true X center ---
 G38.2 Y[SEARCH_DIST] F[PROBE_FEED_FAST]
-G0 Y-[PROBE_RETRACT]
+G1 Y-[PROBE_RETRACT] F1000
 G4 P0.3
 G38.2 Y5 F[PROBE_FEED_SECOND]
 %Y_TOP1 = posy
-G0 Y-[PROBE_RETRACT]
+G1 Y-[PROBE_RETRACT] F1000
 G4 P0.3
 
+; Return to estimated Y center before searching -Y
+G90
+G1 Y[Y_START] F1000
+G4 P0.3
+G91
+
 ; --- 4. Probe -Y (Bottom) ---
-G38.2 Y-[SEARCH_DIST + PROBE_RETRACT] F[PROBE_FEED_FAST]
-G0 Y[PROBE_RETRACT]
+G38.2 Y-[SEARCH_DIST] F[PROBE_FEED_FAST]
+G1 Y[PROBE_RETRACT] F1000
 G4 P0.3
 G38.2 Y-5 F[PROBE_FEED_SECOND]
 %Y_BTM1 = posy
-G0 Y[PROBE_RETRACT]
+G1 Y[PROBE_RETRACT] F1000
 G4 P0.3
 
-; --- Center directly on Y ---
-%Y_CHORD1 = Y_TOP1 - Y_BTM1
-G0 Y[ Y_CHORD1/2 - PROBE_RETRACT ]
+; --- Center directly on Y & Zero Y ---
+%Y_CENTER1 = (Y_TOP1 + Y_BTM1) / 2
+G90
+G1 Y[Y_CENTER1] F1000
 G4 P0.5
 G10 L20 P0 Y0
+G91
+(MSG, CAL_STAGE_1_DONE)
 
 ; ==============================================================
-; PASS 2: ULTRA-SLOW PRECISION CALIBRATION MEASUREMENT
+; PASS 2: FINE CENTER VERIFICATION & RE-ZEROING (Rapids: 600 mm/min)
 ; ==============================================================
-; 1. Right (+X)
-G38.2 X[SEARCH_DIST] F[PROBE_FEED_SLOW]
-%X_RIGHT_CAL = posx
-G0 X-[SEARCH_DIST]
+(MSG, CAL_STAGE_2)
+
+; --- 1. Probe +X (Right) ---
+G38.2 X[SEARCH_DIST] F[PROBE_FEED_FAST]
+G1 X-[PROBE_RETRACT] F600
+G4 P0.3
+G38.2 X5 F[PROBE_FEED_SECOND]
+%X_RIGHT2 = posx
+G1 X-[PROBE_RETRACT] F600
 G4 P0.3
 
-; 2. Left (-X)
-G38.2 X-[SEARCH_DIST] F[PROBE_FEED_SLOW]
-%X_LEFT_CAL = posx
-G0 X[SEARCH_DIST]
-G4 P0.3
-
-; 3. Top (+Y)
-G38.2 Y[SEARCH_DIST] F[PROBE_FEED_SLOW]
-%Y_TOP_CAL = posy
-G0 Y-[SEARCH_DIST]
-G4 P0.3
-
-; 4. Bottom (-Y)
-G38.2 Y-[SEARCH_DIST] F[PROBE_FEED_SLOW]
-%Y_BTM_CAL = posy
-G0 Y[SEARCH_DIST]
-G4 P0.5
-
-; Return to dead center (X0 Y0)
+; Return to X0
 G90
-G0 X0 Y0
+G1 X0 F600
+G4 P0.3
+G91
+
+; --- 2. Probe -X (Left) ---
+G38.2 X-[SEARCH_DIST] F[PROBE_FEED_FAST]
+G1 X[PROBE_RETRACT] F600
+G4 P0.3
+G38.2 X-5 F[PROBE_FEED_SECOND]
+%X_LEFT2 = posx
+G1 X[PROBE_RETRACT] F600
+G4 P0.3
+
+; --- Re-Center on X & Re-Zero X ---
+%X_CENTER2 = (X_RIGHT2 + X_LEFT2) / 2
+G90
+G1 X[X_CENTER2] F600
+G4 P0.5
+G10 L20 P0 X0
+G91
+
+; --- 3. Probe +Y (Top) ---
+G38.2 Y[SEARCH_DIST] F[PROBE_FEED_FAST]
+G1 Y-[PROBE_RETRACT] F600
+G4 P0.3
+G38.2 Y5 F[PROBE_FEED_SECOND]
+%Y_TOP2 = posy
+G1 Y-[PROBE_RETRACT] F600
+G4 P0.3
+
+; Return to Y0
+G90
+G1 Y0 F600
+G4 P0.3
+G91
+
+; --- 4. Probe -Y (Bottom) ---
+G38.2 Y-[SEARCH_DIST] F[PROBE_FEED_FAST]
+G1 Y[PROBE_RETRACT] F600
+G4 P0.3
+G38.2 Y-5 F[PROBE_FEED_SECOND]
+%Y_BTM2 = posy
+G1 Y[PROBE_RETRACT] F600
+G4 P0.3
+
+; --- Re-Center on Y & Re-Zero Y ---
+%Y_CENTER2 = (Y_TOP2 + Y_BTM2) / 2
+G90
+G1 Y[Y_CENTER2] F600
+G4 P0.5
+G10 L20 P0 Y0
+G91
+(MSG, CAL_STAGE_2_DONE)
+
+; ==============================================================
+; PASS 3: PRECISION STYLUS MEASUREMENT (Rapids: 200 mm/min, Feed: 50 mm/min)
+; ==============================================================
+(MSG, CAL_STAGE_3)
+
+; --- 1. Probe +X (Right) 2-touch at 50 mm/min ---
+G38.2 X[SEARCH_DIST] F[PROBE_FEED_SLOW]
+G1 X-[PROBE_RETRACT] F200
+G4 P0.3
+G38.2 X5 F[PROBE_FEED_SLOW]
+%X_RIGHT3 = posx
+(MSG, CAL_XR:[posx])
+G1 X-[PROBE_RETRACT] F200
+G4 P0.3
+
+; Return to X0
+G90
+G1 X0 F200
+G4 P0.3
+G91
+
+; --- 2. Probe -X (Left) 2-touch at 50 mm/min ---
+G38.2 X-[SEARCH_DIST] F[PROBE_FEED_SLOW]
+G1 X[PROBE_RETRACT] F200
+G4 P0.3
+G38.2 X-5 F[PROBE_FEED_SLOW]
+%X_LEFT3 = posx
+(MSG, CAL_XL:[posx])
+G1 X[PROBE_RETRACT] F200
+G4 P0.3
+
+; Return to X0
+G90
+G1 X0 F200
+G4 P0.3
+G91
+
+; --- 3. Probe +Y (Top) 2-touch at 50 mm/min ---
+G38.2 Y[SEARCH_DIST] F[PROBE_FEED_SLOW]
+G1 Y-[PROBE_RETRACT] F200
+G4 P0.3
+G38.2 Y5 F[PROBE_FEED_SLOW]
+%Y_TOP3 = posy
+(MSG, CAL_YT:[posy])
+G1 Y-[PROBE_RETRACT] F200
+G4 P0.3
+
+; Return to Y0
+G90
+G1 Y0 F200
+G4 P0.3
+G91
+
+; --- 4. Probe -Y (Bottom) 2-touch at 50 mm/min ---
+G38.2 Y-[SEARCH_DIST] F[PROBE_FEED_SLOW]
+G1 Y[PROBE_RETRACT] F200
+G4 P0.3
+G38.2 Y-5 F[PROBE_FEED_SLOW]
+%Y_BTM3 = posy
+(MSG, CAL_YB:[posy])
+G1 Y[PROBE_RETRACT] F200
+G4 P0.3
+
+; Return to absolute center (X0 Y0)
+G90
+G1 X0 Y0 F200
 G4 P0.5
 
 (MSG, CALIBRATION_PROBE_DONE)
@@ -469,6 +663,44 @@ G4 P0.5
         onClose();
     };
 
+    const getPassState = (passNumber: 1 | 2 | 3): 'pending' | 'active' | 'completed' => {
+        if (activePhase === 'result') return 'completed';
+        if (!isRunning) return 'pending';
+        if (passNumber === 1) {
+            if (activePhase === 'pass1') return 'active';
+            if (activePhase === 'pass2' || activePhase === 'pass3') return 'completed';
+        }
+        if (passNumber === 2) {
+            if (activePhase === 'pass1') return 'pending';
+            if (activePhase === 'pass2') return 'active';
+            if (activePhase === 'pass3') return 'completed';
+        }
+        if (passNumber === 3) {
+            if (activePhase === 'pass3') return 'active';
+            return 'pending';
+        }
+        return 'pending';
+    };
+
+    const currentRadius = (Number(ringDia) || (isImperial ? 0.75 : 22.0)) / 2;
+    const maxPx = 56;
+    const liveX = parseFloat(wpos.x) || 0;
+    const liveY = parseFloat(wpos.y) || 0;
+    const relX = activePhase === 'pass1'
+        ? (liveX - (startCenterRef.current?.x || 0))
+        : liveX;
+    const relY = activePhase === 'pass1'
+        ? (liveY - (startCenterRef.current?.y || 0))
+        : liveY;
+
+    const stylusOffsetX = isRunning
+        ? Math.max(-maxPx, Math.min(maxPx, (relX / currentRadius) * maxPx))
+        : 0;
+
+    const stylusOffsetY = isRunning
+        ? Math.max(-maxPx, Math.min(maxPx, -(relY / currentRadius) * maxPx))
+        : 0;
+
     if (!isOpen) return null;
 
     return ReactDOM.createPortal(
@@ -498,7 +730,7 @@ G4 P0.5
                             <span>🎯</span>
                             <span>
                                 <strong>3-Pass Ring Gauge Calibration:</strong> Place your probe inside the calibration ring bore. 
-                                Pass 1 finds rough center, Pass 2 aligns the diameter chord, and Pass 3 measures effective triggering diameter at <strong>{slowFeed || 30} {feedUnit}</strong>.
+                                Pass 1 finds rough center, Pass 2 verifies true center, and Pass 3 measures effective triggering diameter at <strong>{slowFeed || 50} {feedUnit}</strong>.
                             </span>
                         </div>
 
@@ -556,18 +788,15 @@ G4 P0.5
                                             <div className="probe-cal-crosshair-h" />
                                             <div className="probe-cal-crosshair-v" />
 
-                                            <div className={`probe-cal-touch-dot left ${activeTouch === 'left' ? 'active' : ''}`} />
-                                            <div className={`probe-cal-touch-dot right ${activeTouch === 'right' ? 'active' : ''}`} />
-                                            <div className={`probe-cal-touch-dot top ${activeTouch === 'top' ? 'active' : ''}`} />
-                                            <div className={`probe-cal-touch-dot bottom ${activeTouch === 'bottom' ? 'active' : ''}`} />
+                                            <div className={`probe-cal-touch-dot left ${activeTouch === 'left' || stylusOffsetX <= -48 ? 'active' : ''}`} />
+                                            <div className={`probe-cal-touch-dot right ${activeTouch === 'right' || stylusOffsetX >= 48 ? 'active' : ''}`} />
+                                            <div className={`probe-cal-touch-dot top ${activeTouch === 'top' || stylusOffsetY <= -48 ? 'active' : ''}`} />
+                                            <div className={`probe-cal-touch-dot bottom ${activeTouch === 'bottom' || stylusOffsetY >= 48 ? 'active' : ''}`} />
 
                                             <div
                                                 className="probe-cal-stylus-center"
                                                 style={{
-                                                    transform: activeTouch === 'left' ? 'translate(-40px, 0)' :
-                                                               activeTouch === 'right' ? 'translate(40px, 0)' :
-                                                               activeTouch === 'top' ? 'translate(0, -40px)' :
-                                                               activeTouch === 'bottom' ? 'translate(0, 40px)' : 'none'
+                                                    transform: `translate(${stylusOffsetX.toFixed(1)}px, ${stylusOffsetY.toFixed(1)}px)`
                                                 }}
                                             />
                                         </div>
@@ -663,15 +892,18 @@ G4 P0.5
                         <div className="probe-cal-sequence-banner">
                             <div className="probe-cal-sequence-content">
                                 <span className="probe-cal-sequence-label">Sequence:</span>
-                                <span className="probe-cal-badge">
+                                <span className={`probe-cal-badge ${getPassState(1)}`}>
+                                    {getPassState(1) === 'completed' && <span className="probe-cal-check">✓ </span>}
                                     Pass 1: {fastFeed || 0} ➔ {secondaryFeed || 0} {feedUnit}
                                 </span>
                                 <span className="probe-cal-sequence-arrow">➔</span>
-                                <span className="probe-cal-badge">
+                                <span className={`probe-cal-badge ${getPassState(2)}`}>
+                                    {getPassState(2) === 'completed' && <span className="probe-cal-check">✓ </span>}
                                     Pass 2: {fastFeed || 0} ➔ {secondaryFeed || 0} {feedUnit}
                                 </span>
                                 <span className="probe-cal-sequence-arrow">➔</span>
-                                <span className="probe-cal-badge">
+                                <span className={`probe-cal-badge ${getPassState(3)}`}>
+                                    {getPassState(3) === 'completed' && <span className="probe-cal-check">✓ </span>}
                                     Pass 3: {slowFeed || 0} {feedUnit} (2x Touch)
                                 </span>
                             </div>

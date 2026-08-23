@@ -337,6 +337,10 @@ ${hasCustomRapid ? `%RAPID_FEED = ${Number(effectiveRapidFeed.toFixed(1))}\n` : 
 G91
 G21
 
+; --- RECORD ESTIMATED START CENTER ---
+%X_START = posx
+%Y_START = posy
+
 ; --- 1. PROBE +X INSIDE RIGHT WALL ---
 G38.2 X[SEARCH_DIST] F[PROBE_FEED_FAST]
 ${rapidCmd('X-[PROBE_RETRACT]')}
@@ -346,8 +350,14 @@ G38.2 X5 F[PROBE_FEED_SLOW]
 ${rapidCmd('X-[PROBE_RETRACT]')}
 G4 P0.3
 
+; Return to estimated X center before searching -X
+G90
+${rapidCmd('X[X_START]')}
+G4 P0.3
+G91
+
 ; --- 2. PROBE -X INSIDE LEFT WALL ---
-G38.2 X-[SEARCH_DIST + PROBE_RETRACT] F[PROBE_FEED_FAST]
+G38.2 X-[SEARCH_DIST] F[PROBE_FEED_FAST]
 ${rapidCmd('X[PROBE_RETRACT]')}
 G4 P0.3
 G38.2 X-5 F[PROBE_FEED_SLOW]
@@ -356,10 +366,12 @@ ${rapidCmd('X[PROBE_RETRACT]')}
 G4 P0.3
 
 ; --- 3. MOVE DIRECTLY TO TRUE X CENTER & ZERO X ---
-%X_CHORD = X_RIGHT - X_LEFT
-${rapidCmd('X[ X_CHORD/2 - PROBE_RETRACT ]')}
+%X_CENTER = (X_RIGHT + X_LEFT)/2
+G90
+${rapidCmd('X[X_CENTER]')}
 G4 P0.5
 G10 L20 P0 X0
+G91
 
 ; --- 4. PROBE +Y INSIDE TOP WALL (FROM TRUE X CENTER) ---
 G38.2 Y[SEARCH_DIST] F[PROBE_FEED_FAST]
@@ -370,8 +382,14 @@ G38.2 Y5 F[PROBE_FEED_SLOW]
 ${rapidCmd('Y-[PROBE_RETRACT]')}
 G4 P0.3
 
+; Return to estimated Y center before searching -Y
+G90
+${rapidCmd('Y[Y_START]')}
+G4 P0.3
+G91
+
 ; --- 5. PROBE -Y INSIDE BOTTOM WALL ---
-G38.2 Y-[SEARCH_DIST + PROBE_RETRACT] F[PROBE_FEED_FAST]
+G38.2 Y-[SEARCH_DIST] F[PROBE_FEED_FAST]
 ${rapidCmd('Y[PROBE_RETRACT]')}
 G4 P0.3
 G38.2 Y-5 F[PROBE_FEED_SLOW]
@@ -380,8 +398,9 @@ ${rapidCmd('Y[PROBE_RETRACT]')}
 G4 P0.3
 
 ; --- 6. MOVE DIRECTLY TO TRUE Y CENTER & ZERO Y ---
-%Y_CHORD = Y_TOP - Y_BTM
-${rapidCmd('Y[ Y_CHORD/2 - PROBE_RETRACT ]')}
+%Y_CENTER = (Y_TOP + Y_BTM)/2
+G90
+${rapidCmd('Y[Y_CENTER]')}
 G4 P0.5
 G10 L20 P0 Y0
 
@@ -405,35 +424,40 @@ ${rapidCmd('X0 Y0')}
 %PROBE_FEED_SLOW = ${Number(effectiveSlowFeed.toFixed(1))}
 ${hasCustomRapid ? `%RAPID_FEED = ${Number(effectiveRapidFeed.toFixed(1))}\n` : ''}%PROBE_RETRACT = ${Number(effectiveRetract.toFixed(3))}
 %Z_LIFT = ${Number(effectiveZLift.toFixed(3))}
-%MARGIN = 5
-%CLEARANCE = 8
+%CLEARANCE = 12
 
 %UNITS=modal.units
 %DISTANCE=modal.distance
-
-G91
-G21
 
 ; --- RECORD START POINT (FRONT -Y IN OPEN AIR) ---
 %X_START = posx
 %Y_START = posy
 
 ; --- 1. PROBE FRONT (-Y) FACE ---
-G38.2 Y[ BOSS_DIA/2 + MARGIN ] F[PROBE_FEED_FAST]
+G91
+G21
+G38.2 Y[ BOSS_DIA/2 + 10 ] F[PROBE_FEED_FAST]
 ${rapidCmd('Y-[PROBE_RETRACT]')}
 G4 P0.3
 G38.2 Y5 F[PROBE_FEED_SLOW]
 %Y_FRONT = posy
 ${rapidCmd('Y-[PROBE_RETRACT]')}
 G4 P0.3
-${traverseCmd('Y-[ posy - Y_START ]')}
+
+; Return to safe front line in open air
+G90
+${traverseCmd('Y[Y_START]')}
 G4 P0.3
 
 ; --- 2. TRAVEL AROUND TO RIGHT (+X) SIDE ---
-${traverseCmd('X[ BOSS_DIA/2 + CLEARANCE ]')}
-${traverseCmd('Y[ (Y_FRONT - Y_START) + BOSS_DIA/2 ]')}
+; Move X past right edge in open air, then move Y to estimated center
+${traverseCmd('X[X_START + BOSS_DIA/2 + CLEARANCE]')}
+${traverseCmd('Y[Y_FRONT + BOSS_DIA/2]')}
 G4 P0.3
-G38.2 X-[ BOSS_DIA/2 + MARGIN + CLEARANCE ] F[PROBE_FEED_FAST]
+
+; Probe Left (-X) towards right face
+G91
+G38.2 X-[ BOSS_DIA/2 + CLEARANCE + 10 ] F[PROBE_FEED_FAST]
 ${rapidCmd('X[PROBE_RETRACT]')}
 G4 P0.3
 G38.2 X-5 F[PROBE_FEED_SLOW]
@@ -441,11 +465,19 @@ G38.2 X-5 F[PROBE_FEED_SLOW]
 ${rapidCmd('X[PROBE_RETRACT]')}
 G4 P0.3
 
+; Estimated Center X calculated from true right edge
+%X_EST_CENTER = X_RIGHT - BOSS_DIA/2
+
 ; --- 3. TRAVEL AROUND TO BACK (+Y) SIDE ---
-${traverseCmd('Y[ BOSS_DIA/2 + CLEARANCE ]')}
-${traverseCmd('X-[ posx - X_START ]')}
+; Move Y past back edge into open air, then move X to estimated center
+G90
+${traverseCmd('Y[Y_FRONT + BOSS_DIA + CLEARANCE]')}
+${traverseCmd('X[X_EST_CENTER]')}
 G4 P0.3
-G38.2 Y-[ BOSS_DIA/2 + MARGIN + CLEARANCE ] F[PROBE_FEED_FAST]
+
+; Probe Front (-Y) towards back face
+G91
+G38.2 Y-[ BOSS_DIA/2 + CLEARANCE + 10 ] F[PROBE_FEED_FAST]
 ${rapidCmd('Y[PROBE_RETRACT]')}
 G4 P0.3
 G38.2 Y-5 F[PROBE_FEED_SLOW]
@@ -453,12 +485,19 @@ G38.2 Y-5 F[PROBE_FEED_SLOW]
 ${rapidCmd('Y[PROBE_RETRACT]')}
 G4 P0.3
 
-; --- 4. ALIGN WITH TRUE Y CENTER & TRAVEL TO LEFT (-X) SIDE ---
+; True Center Y is now EXACT
 %Y_TRUE_CENTER = (Y_FRONT + Y_BACK)/2
-${traverseCmd('Y-[ posy - Y_TRUE_CENTER ]')}
-${traverseCmd('X-[ (posx - X_START) + BOSS_DIA/2 + CLEARANCE ]')}
+
+; --- 4. TRAVEL AROUND TO LEFT (-X) SIDE ---
+; Move X past left edge while staying behind the part in open air, then move Y to true center
+G90
+${traverseCmd('X[X_RIGHT - BOSS_DIA - CLEARANCE]')}
+${traverseCmd('Y[Y_TRUE_CENTER]')}
 G4 P0.3
-G38.2 X[ BOSS_DIA/2 + MARGIN + CLEARANCE ] F[PROBE_FEED_FAST]
+
+; Probe Right (+X) towards left face
+G91
+G38.2 X[ BOSS_DIA/2 + CLEARANCE + 10 ] F[PROBE_FEED_FAST]
 ${rapidCmd('X-[PROBE_RETRACT]')}
 G4 P0.3
 G38.2 X5 F[PROBE_FEED_SLOW]
@@ -466,17 +505,28 @@ G38.2 X5 F[PROBE_FEED_SLOW]
 ${rapidCmd('X-[PROBE_RETRACT]')}
 G4 P0.3
 
-; --- 5. COMPUTE TRUE X CENTER & SET WORK OFFSET ---
+; True Center X is now EXACT
 %X_TRUE_CENTER = (X_RIGHT + X_LEFT)/2
+
+; Step out in -X for clearance
+G90
+${traverseCmd('X[X_LEFT - CLEARANCE]')}
 G4 P0.5
+
+; Zero X and Y to true center
 G10 L20 P0 X[ posx - X_TRUE_CENTER ] Y[ posy - Y_TRUE_CENTER ]
 
 ${enableZLift ? `
-; --- 6. SAFE Z LIFT AND HOVER AT CENTER ---
+; --- 5. SAFE Z LIFT AND HOVER AT CENTER ---
 G90
 ${rapidCmd('Z[Z_LIFT]')}
 ${rapidCmd('X0 Y0')}
-` : ''}
+` : `
+; --- 5. RETURN TO FRONT IN OPEN AIR ---
+G90
+${traverseCmd('Y[Y_START]')}
+${traverseCmd('X0')}
+`}
 
 (MSG, BORE_CENTER_DONE)
 

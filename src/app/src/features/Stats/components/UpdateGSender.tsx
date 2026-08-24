@@ -46,7 +46,7 @@ export function UpdateGSender({
                     </h2>
                     <a
                         className="text-sm text-blue-500 underline"
-                        href="https://github.com/Sienci-Labs/gsender"
+                        href="https://github.com/iuliancalin/gsender"
                         target="_blank"
                         rel="noreferrer"
                     >

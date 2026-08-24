@@ -329,6 +329,7 @@ const BoreCenterFinderModal: React.FC<ModalProps> = ({
 %BORE_DIA = ${Number(effectiveDia.toFixed(3))}
 %PROBE_FEED_FAST = ${Number(effectiveFastFeed.toFixed(1))}
 %PROBE_FEED_SLOW = ${Number(effectiveSlowFeed.toFixed(1))}
+%PROBE_RETRACT_FEED = 1000
 ${hasCustomRapid ? `%RAPID_FEED = ${Number(effectiveRapidFeed.toFixed(1))}\n` : ''}%PROBE_RETRACT = ${Number(effectiveRetract.toFixed(3))}
 %SEARCH_DIST = BORE_DIA/2 + 5
 
@@ -344,11 +345,11 @@ G21
 
 ; --- 1. PROBE +X INSIDE RIGHT WALL ---
 G38.2 X[SEARCH_DIST] F[PROBE_FEED_FAST]
-${rapidCmd('X-[PROBE_RETRACT]')}
+G1 X-[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P0.3
 G38.2 X5 F[PROBE_FEED_SLOW]
 %X_RIGHT = posx
-${rapidCmd('X-[PROBE_RETRACT]')}
+G1 X-[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P0.3
 
 ; Return to estimated X center before searching -X
@@ -359,11 +360,11 @@ G91
 
 ; --- 2. PROBE -X INSIDE LEFT WALL ---
 G38.2 X-[SEARCH_DIST] F[PROBE_FEED_FAST]
-${rapidCmd('X[PROBE_RETRACT]')}
+G1 X[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P0.3
 G38.2 X-5 F[PROBE_FEED_SLOW]
 %X_LEFT = posx
-${rapidCmd('X[PROBE_RETRACT]')}
+G1 X[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P0.3
 
 ; --- 3. MOVE DIRECTLY TO TRUE X CENTER & ZERO X ---
@@ -376,11 +377,11 @@ G91
 
 ; --- 4. PROBE +Y INSIDE TOP WALL (FROM TRUE X CENTER) ---
 G38.2 Y[SEARCH_DIST] F[PROBE_FEED_FAST]
-${rapidCmd('Y-[PROBE_RETRACT]')}
+G1 Y-[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P0.3
 G38.2 Y5 F[PROBE_FEED_SLOW]
 %Y_TOP = posy
-${rapidCmd('Y-[PROBE_RETRACT]')}
+G1 Y-[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P0.3
 
 ; Return to estimated Y center before searching -Y
@@ -391,11 +392,11 @@ G91
 
 ; --- 5. PROBE -Y INSIDE BOTTOM WALL ---
 G38.2 Y-[SEARCH_DIST] F[PROBE_FEED_FAST]
-${rapidCmd('Y[PROBE_RETRACT]')}
+G1 Y[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P0.3
 G38.2 Y-5 F[PROBE_FEED_SLOW]
 %Y_BTM = posy
-${rapidCmd('Y[PROBE_RETRACT]')}
+G1 Y[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P0.3
 
 ; --- 6. MOVE DIRECTLY TO TRUE Y CENTER & ZERO Y ---
@@ -423,6 +424,7 @@ ${rapidCmd('X0 Y0')}
 %BOSS_DIA = ${Number(effectiveDia.toFixed(3))}
 %PROBE_FEED_FAST = ${Number(effectiveFastFeed.toFixed(1))}
 %PROBE_FEED_SLOW = ${Number(effectiveSlowFeed.toFixed(1))}
+%PROBE_RETRACT_FEED = 1000
 ${hasCustomRapid ? `%RAPID_FEED = ${Number(effectiveRapidFeed.toFixed(1))}\n` : ''}%PROBE_RETRACT = ${Number(effectiveRetract.toFixed(3))}
 %Z_LIFT = ${Number(effectiveZLift.toFixed(3))}
 %CLEARANCE = 10
@@ -442,11 +444,11 @@ G21
 ; --- 1. PROBE FRONT (-Y) FACE DIRECTLY AT DEPTH ---
 G91
 G38.2 Y[SEARCH_DIST] F[PROBE_FEED_FAST]
-${rapidCmd('Y-[PROBE_RETRACT]')}
+G1 Y-[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P0.3
 G38.2 Y5 F[PROBE_FEED_SLOW]
 %Y_FRONT = posy
-${rapidCmd('Y-[PROBE_RETRACT]')}
+G1 Y-[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P0.3
 
 ; --- 2. LIFT, HOP ACROSS TOP & PROBE BACK (+Y) FACE ---
@@ -461,11 +463,11 @@ G4 P0.3
 ; Probe Front (-Y) into Back Face
 G91
 G38.2 Y-[CLEARANCE + 15] F[PROBE_FEED_FAST]
-${rapidCmd('Y[PROBE_RETRACT]')}
+G1 Y[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P0.3
 G38.2 Y-5 F[PROBE_FEED_SLOW]
 %Y_BACK = posy
-${rapidCmd('Y[PROBE_RETRACT]')}
+G1 Y[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P0.3
 
 ; --- 3. LIFT TO SAFE HEIGHT & ALIGN TO TRUE Y CENTER ---
@@ -484,11 +486,11 @@ G4 P0.3
 ; Probe Right (+X) into Left Face
 G91
 G38.2 X[CLEARANCE + 15] F[PROBE_FEED_FAST]
-${rapidCmd('X-[PROBE_RETRACT]')}
+G1 X-[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P0.3
 G38.2 X5 F[PROBE_FEED_SLOW]
 %X_LEFT = posx
-${rapidCmd('X-[PROBE_RETRACT]')}
+G1 X-[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P0.3
 
 ; --- 5. LIFT, HOP ACROSS TOP & PROBE RIGHT (+X) FACE ---
@@ -503,11 +505,11 @@ G4 P0.3
 ; Probe Left (-X) into Right Face
 G91
 G38.2 X-[CLEARANCE + 15] F[PROBE_FEED_FAST]
-${rapidCmd('X[PROBE_RETRACT]')}
+G1 X[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P0.3
 G38.2 X-5 F[PROBE_FEED_SLOW]
 %X_RIGHT = posx
-${rapidCmd('X[PROBE_RETRACT]')}
+G1 X[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P0.3
 
 ; --- 6. LIFT, MOVE TO TRUE CENTER & ZERO WORK OFFSET ---
@@ -617,57 +619,101 @@ G10 L20 P0 X0 Y0
 
                             {/* BORE DIAGRAM LAYER (Fades smoothly) */}
                             <div className={`bore-center-diagram-layer bore-layer ${probeMode === 'bore' ? 'active' : 'inactive'}`}>
-                                <div className="bore-center-finder-bore-outer bore-mode" />
+                                <div className="bore-center-finder-bore-outer bore-mode">
+                                    <div className="bore-internal-arrow top">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="18 15 12 9 6 15"></polyline>
+                                        </svg>
+                                    </div>
+                                    <div className="bore-internal-arrow bottom">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </div>
+                                    <div className="bore-internal-arrow left">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="15 18 9 12 15 6"></polyline>
+                                        </svg>
+                                    </div>
+                                    <div className="bore-internal-arrow right">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="9 18 15 12 9 6"></polyline>
+                                        </svg>
+                                    </div>
+                                </div>
                                 <div className="bore-center-finder-target-ring" />
                                 <div className="bore-center-finder-target-center" />
 
                                 <div className="bore-center-finder-arrow-label top outward">
                                     <div className="bore-center-finder-arrow-dot" />
-                                    <span className="bore-center-finder-arrow-text">+Y Wall ↑</span>
+                                    <span className="bore-center-finder-arrow-text">+Y Wall</span>
                                 </div>
 
                                 <div className="bore-center-finder-arrow-label bottom outward">
                                     <div className="bore-center-finder-arrow-dot" />
-                                    <span className="bore-center-finder-arrow-text">-Y Wall ↓</span>
+                                    <span className="bore-center-finder-arrow-text">-Y Wall</span>
                                 </div>
 
                                 <div className="bore-center-finder-arrow-label left outward">
-                                    <span className="bore-center-finder-arrow-text">← -X Wall</span>
+                                    <span className="bore-center-finder-arrow-text">-X Wall</span>
                                     <div className="bore-center-finder-arrow-dot" />
                                 </div>
 
                                 <div className="bore-center-finder-arrow-label right outward">
                                     <div className="bore-center-finder-arrow-dot" />
-                                    <span className="bore-center-finder-arrow-text">+X Wall →</span>
+                                    <span className="bore-center-finder-arrow-text">+X Wall</span>
                                 </div>
                             </div>
 
                             {/* BOSS DIAGRAM LAYER (Fades smoothly) */}
                             <div className={`bore-center-diagram-layer boss-layer ${probeMode === 'boss' ? 'active' : 'inactive'}`}>
                                 <div className="bore-center-finder-boss-cylinder" />
+
+                                {/* Outside Animated Inward Arrows for Boss Probing */}
+                                <div className="boss-outside-arrow bottom">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <line x1="12" y1="19" x2="12" y2="5" />
+                                        <polyline points="5 12 12 5 19 12" />
+                                    </svg>
+                                </div>
+                                <div className="boss-outside-arrow top">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <line x1="12" y1="5" x2="12" y2="19" />
+                                        <polyline points="19 12 12 19 5 12" />
+                                    </svg>
+                                </div>
+                                <div className="boss-outside-arrow left">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <line x1="5" y1="12" x2="19" y2="12" />
+                                        <polyline points="12 5 19 12 12 19" />
+                                    </svg>
+                                </div>
+                                <div className="boss-outside-arrow right">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <line x1="19" y1="12" x2="5" y2="12" />
+                                        <polyline points="12 19 5 12 12 5" />
+                                    </svg>
+                                </div>
+
                                 <div className="bore-center-finder-boss-start-point" title="Start probe in open air here (-Y front at probing depth)">
                                     <span className="bore-center-finder-boss-start-dot" />
                                     <span className="bore-center-finder-boss-start-text">Start (-Y Front)</span>
                                 </div>
 
                                 <div className="bore-center-finder-arrow-label bottom inward">
-                                    <div className="bore-center-finder-arrow-dot" />
-                                    <span className="bore-center-finder-arrow-text">1. -Y Front ↑</span>
+                                    <span className="bore-center-finder-arrow-text">1. -Y Front</span>
                                 </div>
 
                                 <div className="bore-center-finder-arrow-label top inward">
-                                    <div className="bore-center-finder-arrow-dot" />
-                                    <span className="bore-center-finder-arrow-text">2. +Y Back ↓</span>
+                                    <span className="bore-center-finder-arrow-text">2. +Y Back</span>
                                 </div>
 
                                 <div className="bore-center-finder-arrow-label left inward">
-                                    <span className="bore-center-finder-arrow-text">3. -X Left →</span>
-                                    <div className="bore-center-finder-arrow-dot" />
+                                    <span className="bore-center-finder-arrow-text">3. -X Left</span>
                                 </div>
 
                                 <div className="bore-center-finder-arrow-label right inward">
-                                    <div className="bore-center-finder-arrow-dot" />
-                                    <span className="bore-center-finder-arrow-text">4. +X Right ←</span>
+                                    <span className="bore-center-finder-arrow-text">4. +X Right</span>
                                 </div>
                             </div>
 

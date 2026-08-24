@@ -171,15 +171,23 @@
 .probe-cal-crosshair-h {
     position: absolute;
     width: 100%;
+    top: 50%;
+    left: 0;
     height: 1px;
     border-top: 1px dashed rgba(245, 158, 11, 0.35);
+    transform: translateY(-50%);
+    pointer-events: none;
 }
 
 .probe-cal-crosshair-v {
     position: absolute;
     height: 100%;
+    left: 50%;
+    top: 0;
     width: 1px;
     border-left: 1px dashed rgba(245, 158, 11, 0.35);
+    transform: translateX(-50%);
+    pointer-events: none;
 }
 
 .probe-cal-touch-dot {
@@ -219,7 +227,7 @@
     box-shadow: 0 0 16px #f59e0b, 0 0 24px rgba(245, 158, 11, 0.8);
 }
 
-/* Center Stylus Indicator */
+/* Center Stylus Indicator - Dead Centered */
 .probe-cal-stylus-center {
     width: 16px;
     height: 16px;
@@ -228,6 +236,10 @@
     border: 2px solid #ffffff;
     box-shadow: 0 0 12px rgba(245, 158, 11, 0.8);
     position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-top: -8px;
+    margin-left: -8px;
     z-index: 10;
     transition: transform 0.12s linear;
 }

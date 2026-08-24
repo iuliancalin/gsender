@@ -232,30 +232,144 @@
   animation: borePulse 3s ease-in-out infinite alternate;
 }
 
+/* Inside outward-pointing animated arrows for Bore */
+.bore-internal-arrow {
+  position: absolute;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.8));
+  z-index: 5;
+}
+
+.bore-internal-arrow.top {
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: boreArrowPulseTop 1.5s infinite alternate ease-in-out;
+}
+
+.bore-internal-arrow.bottom {
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: boreArrowPulseBottom 1.5s infinite alternate ease-in-out;
+}
+
+.bore-internal-arrow.left {
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  animation: boreArrowPulseLeft 1.5s infinite alternate ease-in-out;
+}
+
+.bore-internal-arrow.right {
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  animation: boreArrowPulseRight 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes boreArrowPulseTop {
+  0% { transform: translate(-50%, 0) scale(0.9); opacity: 0.55; }
+  100% { transform: translate(-50%, -5px) scale(1.15); opacity: 1; filter: drop-shadow(0 0 10px #38bdf8); }
+}
+
+@keyframes boreArrowPulseBottom {
+  0% { transform: translate(-50%, 0) scale(0.9); opacity: 0.55; }
+  100% { transform: translate(-50%, 5px) scale(1.15); opacity: 1; filter: drop-shadow(0 0 10px #38bdf8); }
+}
+
+@keyframes boreArrowPulseLeft {
+  0% { transform: translate(0, -50%) scale(0.9); opacity: 0.55; }
+  100% { transform: translate(-5px, -50%) scale(1.15); opacity: 1; filter: drop-shadow(0 0 10px #38bdf8); }
+}
+
+@keyframes boreArrowPulseRight {
+  0% { transform: translate(0, -50%) scale(0.9); opacity: 0.55; }
+  100% { transform: translate(5px, -50%) scale(1.15); opacity: 1; filter: drop-shadow(0 0 10px #38bdf8); }
+}
+
 @keyframes borePulse {
   0% { box-shadow: inset 0 10px 24px rgba(0, 0, 0, 0.9), inset 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 8px rgba(59, 130, 246, 0.2); }
   100% { box-shadow: inset 0 12px 28px rgba(0, 0, 0, 0.95), inset 0 2px 8px rgba(0, 0, 0, 1), 0 0 16px rgba(59, 130, 246, 0.45); }
 }
 
-/* 2. BOSS MODE: Interrupted dashed border with prominent outside cast shadow */
+/* 2. BOSS MODE: Single dashed edge line matching Edge&Corner inside style */
 .bore-center-finder-boss-cylinder {
   width: 126px;
   height: 126px;
-  background: radial-gradient(circle, #475569 0%, #334155 60%, #1e293b 100%);
+  background: radial-gradient(circle, #080e1a 0%, #030712 100%);
   border-radius: 50%;
   position: absolute;
   top: 40%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 2;
-  border: 2.5px dashed #38bdf8;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.85), 0 6px 12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(56, 189, 248, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.15);
-  animation: bossFloat 3s ease-in-out infinite alternate;
+  border: 2px dashed #475569;
+  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.85), 0 10px 24px rgba(0, 0, 0, 0.6);
 }
 
-@keyframes bossFloat {
-  0% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 16px 36px rgba(0, 0, 0, 0.85), 0 6px 12px rgba(0, 0, 0, 0.6), 0 0 10px rgba(56, 189, 248, 0.3); }
-  100% { transform: translate(-50%, -52%) scale(1.02); box-shadow: 0 22px 44px rgba(0, 0, 0, 0.9), 0 8px 16px rgba(0, 0, 0, 0.7), 0 0 18px rgba(56, 189, 248, 0.5); }
+/* Outside Inward-Pointing Animated Arrows for Boss */
+.boss-outside-arrow {
+  position: absolute;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.8));
+  z-index: 6;
+}
+
+.boss-outside-arrow.top {
+  top: calc(40% - 92px);
+  left: 50%;
+  transform: translateX(-50%);
+  animation: bossArrowInwardTop 1.4s infinite alternate ease-in-out;
+}
+
+.boss-outside-arrow.bottom {
+  top: calc(40% + 72px);
+  left: 50%;
+  transform: translateX(-50%);
+  animation: bossArrowInwardBottom 1.4s infinite alternate ease-in-out;
+}
+
+.boss-outside-arrow.left {
+  left: calc(50% - 92px);
+  top: 40%;
+  transform: translateY(-50%);
+  animation: bossArrowInwardLeft 1.4s infinite alternate ease-in-out;
+}
+
+.boss-outside-arrow.right {
+  right: calc(50% - 92px);
+  top: 40%;
+  transform: translateY(-50%);
+  animation: bossArrowInwardRight 1.4s infinite alternate ease-in-out;
+}
+
+@keyframes bossArrowInwardTop {
+  0% { transform: translateX(-50%) translateY(0px) scale(1); filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.6)); }
+  100% { transform: translateX(-50%) translateY(3px) scale(1.15); filter: drop-shadow(0 0 10px #38bdf8); }
+}
+
+@keyframes bossArrowInwardBottom {
+  0% { transform: translateX(-50%) translateY(0px) scale(1); filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.6)); }
+  100% { transform: translateX(-50%) translateY(-3px) scale(1.15); filter: drop-shadow(0 0 10px #38bdf8); }
+}
+
+@keyframes bossArrowInwardLeft {
+  0% { transform: translateY(-50%) translateX(0px) scale(1); filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.6)); }
+  100% { transform: translateY(-50%) translateX(3px) scale(1.15); filter: drop-shadow(0 0 10px #38bdf8); }
+}
+
+@keyframes bossArrowInwardRight {
+  0% { transform: translateY(-50%) translateX(0px) scale(1); filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.6)); }
+  100% { transform: translateY(-50%) translateX(-3px) scale(1.15); filter: drop-shadow(0 0 10px #38bdf8); }
 }
 
 /* Boss Mode Starting Point Indicator in open air (-Y front) */

@@ -342,6 +342,7 @@ const MaterialCenterFinderModal: React.FC<ModalProps> = ({
 %STOCK_Y = ${Number(effectiveSizeY.toFixed(3))}
 %PROBE_FEED_FAST = ${Number(effectiveFastFeed.toFixed(1))}
 %PROBE_FEED_SLOW = ${Number(effectiveSlowFeed.toFixed(1))}
+%PROBE_RETRACT_FEED = 1000
 %PROBE_RETRACT = ${Number(effectiveRetract.toFixed(3))}
 %Z_SAFE_LIFT = ${Number(effectiveSafeZ.toFixed(3))}
 %Z_UNDER_SURFACE = ${Number(effectiveZUnderSurface.toFixed(3))}
@@ -356,9 +357,10 @@ G21
 
 ; --- PROBE Z ---
 G38.2 Z-50 F[PROBE_FEED_FAST]
-G0 Z[PROBE_RETRACT]
+G1 Z[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
+G4 P0.3
 G38.2 Z-5 F[PROBE_FEED_SLOW]
-G0 Z[PROBE_RETRACT]
+G1 Z[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P1
 G10 L20 P0 Z[PROBE_RETRACT]
 %Z_LIFT_TOTAL = Z_SAFE_LIFT - Z_UNDER_SURFACE
@@ -368,19 +370,21 @@ G0 Z[Z_LIFT_TOTAL]
 G0 X[ STOCK_X/2 + EDGE_MARGIN_MAJOR ]
 G0 Z-[Z_LIFT_TOTAL - Z_UNDER_SURFACE]
 G38.2 X-[ STOCK_X + 2*EDGE_MARGIN ] F[PROBE_FEED_FAST]
-G0 X[PROBE_RETRACT]
+G1 X[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
+G4 P0.3
 G38.2 X-5 F[PROBE_FEED_SLOW]
 %X_RIGHT = posx
-G0 X[PROBE_RETRACT]
+G1 X[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G0 Z[Z_LIFT_TOTAL]
 
 G0 X-[ STOCK_X + 2*EDGE_MARGIN ]
 G0 Z-[Z_LIFT_TOTAL]
 G38.2 X[ STOCK_X + 2*EDGE_MARGIN ] F[PROBE_FEED_FAST]
-G0 X-[PROBE_RETRACT]
+G1 X-[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
+G4 P0.3
 G38.2 X5 F[PROBE_FEED_SLOW]
 %X_LEFT = posx
-G0 X-[PROBE_RETRACT]
+G1 X-[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G0 Z[Z_LIFT_TOTAL]
 
 ; Calculate middle of X chord and return to center
@@ -395,19 +399,21 @@ G10 L20 P0 X0
 G0 Y[ STOCK_Y/2 + EDGE_MARGIN_MAJOR ]
 G0 Z-[Z_LIFT_TOTAL]
 G38.2 Y-[ STOCK_Y + 2*EDGE_MARGIN ] F[PROBE_FEED_FAST]
-G0 Y[PROBE_RETRACT]
+G1 Y[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
+G4 P0.3
 G38.2 Y-5 F[PROBE_FEED_SLOW]
 %Y_TOP = posy
-G0 Y[PROBE_RETRACT]
+G1 Y[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G0 Z[Z_LIFT_TOTAL]
 
 G0 Y-[ STOCK_Y + 2*EDGE_MARGIN ]
 G0 Z-[Z_LIFT_TOTAL]
 G38.2 Y[ STOCK_Y + 2*EDGE_MARGIN ] F[PROBE_FEED_FAST]
-G0 Y-[PROBE_RETRACT]
+G1 Y-[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
+G4 P0.3
 G38.2 Y5 F[PROBE_FEED_SLOW]
 %Y_BTM = posy
-G0 Y-[PROBE_RETRACT]
+G1 Y-[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G0 Z[Z_LIFT_TOTAL]
 
 ; Calculate middle of Y chord and return to center
@@ -477,34 +483,55 @@ G10 L20 P0 Y0
 
                     <div className="material-center-finder-body">
                         <div className="material-center-finder-diagram">
-                            <div className="material-center-finder-diagram-line-h" />
-                            <div className="material-center-finder-diagram-line-v" />
                             <div className="material-center-finder-material-block" />
                             <div className="material-center-finder-target-ring" />
                             <div className="material-center-finder-target-dot" />
 
+                            {/* Inward Animated Probe Arrows (Exact match to Edge & Corner finder) */}
+                            <div className="material-inward-arrow top">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19" />
+                                    <polyline points="19 12 12 19 5 12" />
+                                </svg>
+                            </div>
+                            <div className="material-inward-arrow bottom">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="12" y1="19" x2="12" y2="5" />
+                                    <polyline points="5 12 12 5 19 12" />
+                                </svg>
+                            </div>
+                            <div className="material-inward-arrow left">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="5" y1="12" x2="19" y2="12" />
+                                    <polyline points="12 5 19 12 12 19" />
+                                </svg>
+                            </div>
+                            <div className="material-inward-arrow right">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="19" y1="12" x2="5" y2="12" />
+                                    <polyline points="12 19 5 12 12 5" />
+                                </svg>
+                            </div>
+
+                            {/* Outer Labels */}
                             <div className="material-center-finder-arrow-label top">
-                                <span className="material-center-finder-arrow-text">+Y</span>
                                 <div className="material-center-finder-arrow-dot" />
-                                <span className="material-center-finder-arrow-symbol">↑</span>
+                                <span className="material-center-finder-arrow-text">+Y Edge</span>
                             </div>
 
                             <div className="material-center-finder-arrow-label bottom">
-                                <span className="material-center-finder-arrow-symbol">↓</span>
                                 <div className="material-center-finder-arrow-dot" />
-                                <span className="material-center-finder-arrow-text">-Y</span>
+                                <span className="material-center-finder-arrow-text">-Y Edge</span>
                             </div>
 
                             <div className="material-center-finder-arrow-label left">
-                                <span className="material-center-finder-arrow-text">-X</span>
+                                <span className="material-center-finder-arrow-text">-X Edge</span>
                                 <div className="material-center-finder-arrow-dot" />
-                                <span className="material-center-finder-arrow-symbol">←</span>
                             </div>
 
                             <div className="material-center-finder-arrow-label right">
-                                <span className="material-center-finder-arrow-symbol">→</span>
                                 <div className="material-center-finder-arrow-dot" />
-                                <span className="material-center-finder-arrow-text">+X</span>
+                                <span className="material-center-finder-arrow-text">+X Edge</span>
                             </div>
                         </div>
 

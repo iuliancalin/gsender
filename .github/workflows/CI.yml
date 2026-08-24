@@ -15,7 +15,8 @@ on:
     branches: [ "master" ]
 
 env:
-  GITHUB_TOKEN: ${{ secrets.CI_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.CI_TOKEN || secrets.GITHUB_TOKEN }}
+  GH_TOKEN: ${{ secrets.CI_TOKEN || secrets.GITHUB_TOKEN }}
   NODE_OPTIONS: --max-old-space-size=8192
   VITE_PUBLIC_POSTHOG_PROJECT_TOKEN: ${{ secrets.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN }}
   VITE_PUBLIC_POSTHOG_HOST: ${{ secrets.VITE_PUBLIC_POSTHOG_HOST }}
@@ -24,7 +25,6 @@ jobs:
   build-linux:
     name: Build Linux packages
     runs-on: ubuntu-latest
-    environment: CI
     permissions:
       contents: write
     steps:
@@ -49,18 +49,18 @@ jobs:
           ls -al output releases/linux
           if [[ "$GITHUB_REF_TYPE" == "branch" && "$GITHUB_REF_NAME" == "master" ]]; then
             yarn github-release delete \
-              --owner=gSender \
-              --repo=gsender \
+              --owner="${{ github.repository_owner }}" \
+              --repo="${{ github.event.repository.name }}" \
               --tag="${GITHUB_REF_NAME}-latest" \
               --release-name="${GITHUB_REF_NAME}" \
-              "*-linux*";
+              "*-linux*" || true;
             yarn github-release upload \
-              --owner=gSender \
-              --repo=gsender \
+              --owner="${{ github.repository_owner }}" \
+              --repo="${{ github.event.repository.name }}" \
               --tag="${GITHUB_REF_NAME}-latest" \
               --release-name="${GITHUB_REF_NAME}" \
               --body="${GIT_COMMIT_LOG}" \
-              releases/linux/*;
+              releases/linux/* || true;
           fi
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -72,17 +72,16 @@ jobs:
 
   build-macos:
     name: Build macOS packages
-    environment: CI
     runs-on: macos-latest
     env:
-      GH_TOKEN: ${{ secrets.CI_TOKEN }}
+      GH_TOKEN: ${{ secrets.CI_TOKEN || secrets.GITHUB_TOKEN }}
       APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
       APPLE_ID: ${{ secrets.APPLE_ID }}
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
       CSC_LINK: ${{ secrets.CSC_LINK }}
-      # Skip code signing for pull requests
-      CSC_IDENTITY_AUTO_DISCOVERY: ${{ github.event_name == 'pull_request' && 'false' || 'true' }}
+      # Skip code signing for pull requests or when secrets missing
+      CSC_IDENTITY_AUTO_DISCOVERY: ${{ (github.event_name == 'pull_request' || secrets.CSC_LINK == '') && 'false' || 'true' }}
     permissions:
       contents: write
     steps:
@@ -107,18 +106,18 @@ jobs:
           ls -al output releases/macos
           if [[ "$GITHUB_REF_TYPE" == "branch" && "$GITHUB_REF_NAME" == "master" ]]; then
             yarn github-release delete \
-              --owner=gSender \
-              --repo=gsender \
+              --owner="${{ github.repository_owner }}" \
+              --repo="${{ github.event.repository.name }}" \
               --tag="${GITHUB_REF_NAME}-latest" \
               --release-name="${GITHUB_REF_NAME}" \
-              "*-macos*";
+              "*-macos*" || true;
             yarn github-release upload \
-              --owner=gSender \
-              --repo=gsender \
+              --owner="${{ github.repository_owner }}" \
+              --repo="${{ github.event.repository.name }}" \
               --tag="${GITHUB_REF_NAME}-latest" \
               --release-name="${GITHUB_REF_NAME}" \
               --body="${GIT_COMMIT_LOG}" \
-              releases/macos/*;
+              releases/macos/* || true;
           fi
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -137,7 +136,6 @@ jobs:
 
   build-windows:
     name: Build Windows packages
-    environment: CI
     runs-on: windows-latest
     permissions:
       contents: write
@@ -147,7 +145,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Write client auth certificate
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') && secrets.SM_CLIENT_CERT_FILE_BASE64 != ''
         shell: pwsh
         run: |
           $b64 = "${{ secrets.SM_CLIENT_CERT_FILE_BASE64 }}" -replace '\s', ''
@@ -156,7 +154,7 @@ jobs:
           [IO.File]::WriteAllBytes($certPath, $certBytes)
           echo "SM_CLIENT_CERT_FILE=$certPath" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
       - name: Set up DigiCert SM Tools
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') && secrets.SM_API_KEY != '' && secrets.SM_CLIENT_CERT_PASSWORD != ''
         shell: pwsh
         env:
           SM_API_KEY: ${{ secrets.SM_API_KEY }}
@@ -182,7 +180,7 @@ jobs:
           & $smctl.FullName creds save $env:SM_API_KEY $env:SM_CLIENT_CERT_PASSWORD
           & $smctl.FullName windows certsync --keypair-alias="${{ secrets.SM_KEYPAIR_ALIAS }}"
       - name: Add signtool to PATH
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') && secrets.SM_API_KEY != ''
         shell: pwsh
         run: |
           $signtool = Get-ChildItem -Path "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter "signtool.exe" |
@@ -212,18 +210,18 @@ jobs:
           ls -al output releases/windows
           if [[ "$GITHUB_REF_TYPE" == "branch" && "$GITHUB_REF_NAME" == "master" ]]; then
             yarn github-release delete \
-              --owner=gSender \
-              --repo=gsender \
+              --owner="${{ github.repository_owner }}" \
+              --repo="${{ github.event.repository.name }}" \
               --tag="${GITHUB_REF_NAME}-latest" \
               --release-name="${GITHUB_REF_NAME}" \
-              "*-windows*";
+              "*-windows*" || true;
             yarn github-release upload \
-              --owner=gSender \
-              --repo=gsender \
+              --owner="${{ github.repository_owner }}" \
+              --repo="${{ github.event.repository.name }}" \
               --tag="${GITHUB_REF_NAME}-latest" \
               --release-name="${GITHUB_REF_NAME}" \
               --body="${GIT_COMMIT_LOG}" \
-              releases/windows/*;
+              releases/windows/* || true;
           fi
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -241,10 +239,10 @@ jobs:
           retention-days: 2
   build-pi:
     name: Build Raspberry PI packages
-    runs-on: ubuntu-24.04-arm
-    environment: CI
+    runs-on: ubuntu-latest
+    continue-on-error: true
     env:
-      GH_TOKEN: ${{ secrets.CI_TOKEN }}
+      GH_TOKEN: ${{ secrets.CI_TOKEN || secrets.GITHUB_TOKEN }}
     permissions:
       contents: write
     steps:

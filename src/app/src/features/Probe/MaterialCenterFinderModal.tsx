@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
-import controller from 'app/lib/controller';
+import controller, { addControllerEvents, removeControllerEvents } from 'app/lib/controller';
 import store from 'app/store';
 import { useWorkspaceState } from 'app/hooks/useWorkspaceState';
 import { useTypedSelector } from 'app/hooks/useTypedSelector';
@@ -170,6 +170,7 @@ const MaterialCenterFinderModal: React.FC<ModalProps> = ({
     const cancelRequestedRef = useRef<boolean>(false);
     const hasCompletedRef = useRef<boolean>(false);
     const runStartTimeRef = useRef<number>(0);
+    const countRef = useRef<number>(0);
 
     const triggerSuccess = () => {
         if (!isRunningRef.current || cancelRequestedRef.current || hasCompletedRef.current) {
@@ -181,7 +182,7 @@ const MaterialCenterFinderModal: React.FC<ModalProps> = ({
         setDialogState('success');
     };
 
-    // Serial, message & workflow event listener
+    // Hardware touch & message event listener
     useEffect(() => {
         const handleSerialData = (data: any) => {
             let rawLine = '';
@@ -191,88 +192,36 @@ const MaterialCenterFinderModal: React.FC<ModalProps> = ({
                 rawLine = data.line || data.data || data.message || JSON.stringify(data);
             }
 
+            if (rawLine && (rawLine.includes('[PRB:') || rawLine.includes('PRB:'))) {
+                countRef.current += 1;
+
+                // Total 10 touches: 2 on Z, 2 on +X, 2 on -X, 2 on +Y, 2 on -Y
+                if (countRef.current >= 10) {
+                    setTimeout(() => {
+                        if (isRunningRef.current) {
+                            triggerSuccess();
+                        }
+                    }, 1200);
+                }
+            }
+
             if (rawLine && rawLine.includes('MATERIAL_CENTER_DONE')) {
                 triggerSuccess();
             }
         };
 
-        const handleWorkflowState = (state: string) => {
-            if (state === 'idle' && isRunningRef.current && !cancelRequestedRef.current && !hasCompletedRef.current) {
-                if (Date.now() - runStartTimeRef.current > 2000) {
-                    triggerSuccess();
-                }
-            }
+        const events = {
+            'serialport:read': handleSerialData,
+            'feeder:status': handleSerialData,
+            'message': handleSerialData,
         };
 
-        if (controller) {
-            if (typeof controller.on === 'function') {
-                controller.on('serialport:read', handleSerialData);
-                controller.on('feeder:status', handleSerialData);
-                controller.on('message', handleSerialData);
-                controller.on('workflow:state', handleWorkflowState);
-            }
-        }
+        addControllerEvents(events);
 
         return () => {
-            if (controller) {
-                if (typeof controller.off === 'function') {
-                    controller.off('serialport:read', handleSerialData);
-                    controller.off('feeder:status', handleSerialData);
-                    controller.off('message', handleSerialData);
-                    controller.off('workflow:state', handleWorkflowState);
-                } else if (typeof (controller as any).removeListener === 'function') {
-                    (controller as any).removeListener('serialport:read', handleSerialData);
-                    (controller as any).removeListener('feeder:status', handleSerialData);
-                    (controller as any).removeListener('message', handleSerialData);
-                    (controller as any).removeListener('workflow:state', handleWorkflowState);
-                }
-            }
+            removeControllerEvents(events);
         };
     }, []);
-
-    // Polling interval to catch state when serial string / feeder event is missed
-    useEffect(() => {
-        if (!isRunning) {
-            runStartTimeRef.current = 0;
-            return;
-        }
-
-        if (!runStartTimeRef.current) {
-            runStartTimeRef.current = Date.now();
-        }
-
-        let idleCounter = 0;
-
-        const intervalId = setInterval(() => {
-            if (Date.now() - runStartTimeRef.current < 1500) {
-                return;
-            }
-
-            const feeder = (controller as any)?.feeder;
-            const state = (controller as any)?.state || (controller as any)?.portStatus;
-
-            const feederQueue = feeder?.queue ?? feeder?.pending ?? 0;
-            const activeState = (
-                state?.status?.activeState ||
-                state?.state ||
-                ''
-            ).toLowerCase();
-
-            if (feederQueue === 0 && activeState === 'idle') {
-                idleCounter++;
-                if (idleCounter >= 5) {
-                    clearInterval(intervalId);
-                    triggerSuccess();
-                }
-            } else {
-                idleCounter = 0;
-            }
-        }, 300);
-
-        return () => {
-            clearInterval(intervalId);
-        };
-    }, [isRunning]);
 
     // Immediate alarm abort handler
     useEffect(() => {
@@ -290,6 +239,7 @@ const MaterialCenterFinderModal: React.FC<ModalProps> = ({
             isRunningRef.current = false;
             hasCompletedRef.current = false;
             runStartTimeRef.current = 0;
+            countRef.current = 0;
             setDialogState('idle');
             setIsRunning(false);
             setHasTriggered(false);
@@ -316,6 +266,7 @@ const MaterialCenterFinderModal: React.FC<ModalProps> = ({
             return;
         }
 
+        countRef.current = 0;
         cancelRequestedRef.current = false;
         hasCompletedRef.current = false;
         isRunningRef.current = true;
@@ -361,7 +312,7 @@ G1 Z[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
 G4 P0.3
 G38.2 Z-5 F[PROBE_FEED_SLOW]
 G1 Z[PROBE_RETRACT] F[PROBE_RETRACT_FEED]
-G4 P1
+G4 P0.5
 G10 L20 P0 Z[PROBE_RETRACT]
 %Z_LIFT_TOTAL = Z_SAFE_LIFT - Z_UNDER_SURFACE
 G0 Z[Z_LIFT_TOTAL]
@@ -392,7 +343,7 @@ G0 Z[Z_LIFT_TOTAL]
 G10 L20 P0 X[X_LEFT]
 G0 X[X_CHORD/2 + PROBE_RETRACT]
 %X_CENTER = posx
-G4 P1
+G4 P0.5
 G10 L20 P0 X0
 
 ; --- PROBE Y EDGES ---
@@ -421,7 +372,7 @@ G0 Z[Z_LIFT_TOTAL]
 G10 L20 P0 Y[Y_BTM]
 G0 Y[Y_CHORD/2 + PROBE_RETRACT]
 %Y_CENTER = posy
-G4 P1
+G4 P0.5
 G10 L20 P0 Y0
 
 (MSG, MATERIAL_CENTER_DONE)

@@ -39,6 +39,7 @@ export interface Workspace {
     m8CustomLabel?: string;
     probeTipDiameter?: number;
     atcEnabled: boolean;
+    portraitMacroBar: boolean;
     collectUsageDataStatus: 'accepted' | 'denied' | 'pending';
     safeRetractHeight: number;
     customDecimalPlaces: number;

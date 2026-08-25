@@ -1,0 +1,1017 @@
+/* Bore / Hole Center Finder Modal Styles */
+
+.bore-center-finder-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 999999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.bore-center-finder-modal-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: min(92vw, 780px);
+}
+
+.bore-center-finder-modal {
+  position: relative;
+  z-index: 2;
+  background: #1e1e24;
+  color: #e2e8f0;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #33333d;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  animation: boreCenterSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes boreCenterSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.bore-center-finder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #18181c;
+  border-bottom: 1px solid #2d2d38;
+}
+
+.bore-center-finder-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.bore-center-finder-title-icon {
+  color: #3b82f6;
+  display: flex;
+  align-items: center;
+}
+
+.bore-center-finder-close-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.bore-center-finder-close-btn:hover:not(:disabled) {
+  color: #e1e4ea;
+}
+
+.bore-center-finder-close-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.bore-center-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Segmented Top Mode Switcher with Smooth Slider Pill */
+.bore-center-mode-toggle {
+  position: relative;
+  display: flex;
+  background: #090d16;
+  border: 1px solid #334155;
+  border-radius: 20px;
+  padding: 3px;
+  gap: 0;
+  user-select: none;
+  min-width: 256px;
+}
+
+.bore-center-mode-slider {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 6px) / 2);
+  background: #0284c7;
+  border-radius: 16px;
+  box-shadow: 0 1px 8px rgba(2, 132, 199, 0.45);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.bore-center-mode-toggle.mode-bore .bore-center-mode-slider {
+  transform: translateX(0);
+}
+
+.bore-center-mode-toggle.mode-boss .bore-center-mode-slider {
+  transform: translateX(100%);
+}
+
+.bore-center-mode-btn {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 16px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.25s ease;
+}
+
+.bore-center-mode-btn:hover:not(:disabled):not(.active) {
+  color: #f1f5f9;
+}
+
+.bore-center-mode-btn.active {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.bore-center-mode-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.bore-center-finder-subtitle {
+  padding: 16px 24px 0 24px;
+  font-size: 14px;
+  color: #d1d5db;
+  line-height: 1.45;
+}
+
+.bore-center-finder-body {
+  display: flex;
+  padding: 24px;
+  gap: 28px;
+}
+
+.bore-center-finder-diagram {
+  flex: 1 1 auto;
+  background: #141418;
+  border-radius: 10px;
+  border: 1px solid #272730;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  min-height: 440px;
+  overflow: hidden;
+}
+
+.bore-center-finder-diagram-line-h,
+.bore-center-finder-diagram-line-v {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.bore-center-finder-diagram-line-h {
+  top: 50%;
+  left: 35%;
+  right: 35%;
+  height: 1px;
+  border-top: 1px dashed rgba(59, 130, 246, 0.45);
+  transform: translateY(-50%);
+}
+
+.bore-center-finder-diagram-line-v {
+  left: 50%;
+  top: 35%;
+  bottom: 35%;
+  width: 1px;
+  border-left: 1px dashed rgba(59, 130, 246, 0.45);
+  transform: translateX(-50%);
+}
+
+/* 1. BORE MODE: Continuous solid border with deep inside shadow drop */
+.bore-center-finder-bore-outer.bore-mode {
+  width: 156px;
+  height: 156px;
+  background: radial-gradient(circle, #0b0f19 30%, #1e293b 80%, #334155 100%);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  border: 2px solid #3b82f6;
+  box-shadow: inset 0 10px 24px rgba(0, 0, 0, 0.9), inset 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 12px rgba(59, 130, 246, 0.35);
+  animation: borePulse 3s ease-in-out infinite alternate;
+}
+
+/* Inside outward-pointing animated arrows for Bore */
+.bore-internal-arrow {
+  position: absolute;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.8));
+  z-index: 5;
+}
+
+.bore-internal-arrow.top {
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: boreArrowPulseTop 1.5s infinite alternate ease-in-out;
+}
+
+.bore-internal-arrow.bottom {
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: boreArrowPulseBottom 1.5s infinite alternate ease-in-out;
+}
+
+.bore-internal-arrow.left {
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  animation: boreArrowPulseLeft 1.5s infinite alternate ease-in-out;
+}
+
+.bore-internal-arrow.right {
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  animation: boreArrowPulseRight 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes boreArrowPulseTop {
+  0% { transform: translate(-50%, 0) scale(0.9); opacity: 0.55; }
+  100% { transform: translate(-50%, -5px) scale(1.15); opacity: 1; filter: drop-shadow(0 0 10px #38bdf8); }
+}
+
+@keyframes boreArrowPulseBottom {
+  0% { transform: translate(-50%, 0) scale(0.9); opacity: 0.55; }
+  100% { transform: translate(-50%, 5px) scale(1.15); opacity: 1; filter: drop-shadow(0 0 10px #38bdf8); }
+}
+
+@keyframes boreArrowPulseLeft {
+  0% { transform: translate(0, -50%) scale(0.9); opacity: 0.55; }
+  100% { transform: translate(-5px, -50%) scale(1.15); opacity: 1; filter: drop-shadow(0 0 10px #38bdf8); }
+}
+
+@keyframes boreArrowPulseRight {
+  0% { transform: translate(0, -50%) scale(0.9); opacity: 0.55; }
+  100% { transform: translate(5px, -50%) scale(1.15); opacity: 1; filter: drop-shadow(0 0 10px #38bdf8); }
+}
+
+@keyframes borePulse {
+  0% { box-shadow: inset 0 10px 24px rgba(0, 0, 0, 0.9), inset 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 8px rgba(59, 130, 246, 0.2); }
+  100% { box-shadow: inset 0 12px 28px rgba(0, 0, 0, 0.95), inset 0 2px 8px rgba(0, 0, 0, 1), 0 0 16px rgba(59, 130, 246, 0.45); }
+}
+
+/* 2. BOSS MODE: Single dashed edge line matching Edge&Corner inside style */
+.bore-center-finder-boss-cylinder {
+  width: 126px;
+  height: 126px;
+  background: radial-gradient(circle, #080e1a 0%, #030712 100%);
+  border-radius: 50%;
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  border: 2px dashed #475569;
+  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.85), 0 10px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* Outside Inward-Pointing Animated Arrows for Boss */
+.boss-outside-arrow {
+  position: absolute;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.8));
+  z-index: 6;
+}
+
+.boss-outside-arrow.top {
+  top: calc(40% - 92px);
+  left: 50%;
+  transform: translateX(-50%);
+  animation: bossArrowInwardTop 1.4s infinite alternate ease-in-out;
+}
+
+.boss-outside-arrow.bottom {
+  top: calc(40% + 72px);
+  left: 50%;
+  transform: translateX(-50%);
+  animation: bossArrowInwardBottom 1.4s infinite alternate ease-in-out;
+}
+
+.boss-outside-arrow.left {
+  left: calc(50% - 92px);
+  top: 40%;
+  transform: translateY(-50%);
+  animation: bossArrowInwardLeft 1.4s infinite alternate ease-in-out;
+}
+
+.boss-outside-arrow.right {
+  right: calc(50% - 92px);
+  top: 40%;
+  transform: translateY(-50%);
+  animation: bossArrowInwardRight 1.4s infinite alternate ease-in-out;
+}
+
+@keyframes bossArrowInwardTop {
+  0% { transform: translateX(-50%) translateY(0px) scale(1); filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.6)); }
+  100% { transform: translateX(-50%) translateY(3px) scale(1.15); filter: drop-shadow(0 0 10px #38bdf8); }
+}
+
+@keyframes bossArrowInwardBottom {
+  0% { transform: translateX(-50%) translateY(0px) scale(1); filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.6)); }
+  100% { transform: translateX(-50%) translateY(-3px) scale(1.15); filter: drop-shadow(0 0 10px #38bdf8); }
+}
+
+@keyframes bossArrowInwardLeft {
+  0% { transform: translateY(-50%) translateX(0px) scale(1); filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.6)); }
+  100% { transform: translateY(-50%) translateX(3px) scale(1.15); filter: drop-shadow(0 0 10px #38bdf8); }
+}
+
+@keyframes bossArrowInwardRight {
+  0% { transform: translateY(-50%) translateX(0px) scale(1); filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.6)); }
+  100% { transform: translateY(-50%) translateX(-3px) scale(1.15); filter: drop-shadow(0 0 10px #38bdf8); }
+}
+
+/* Boss Mode Starting Point Indicator in open air (-Y front) */
+.bore-center-finder-boss-start-point {
+  position: absolute;
+  top: calc(40% + 198px);
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.85);
+  padding: 3px 8px;
+  border-radius: 20px;
+  border: 1px solid #38bdf8;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.bore-center-finder-boss-start-dot {
+  width: 9px;
+  height: 9px;
+  background: #38bdf8;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #38bdf8;
+  animation: bcf-pulse 1.2s infinite alternate;
+}
+
+.bore-center-finder-boss-start-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #38bdf8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bore-center-finder-target-center {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #10b981;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.bore-center-finder-target-ring {
+  width: 40px;
+  height: 40px;
+  border: 1px dashed #10b981;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+}
+
+.bore-center-finder-arrow-label {
+  position: absolute;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #18181f;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #272733;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.bore-center-finder-arrow-label.top {
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: row;
+}
+
+.bore-center-finder-arrow-label.bottom {
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: row;
+}
+
+.bore-center-finder-arrow-label.left {
+  left: 4%;
+  top: 50%;
+  transform: translateY(-50%);
+  flex-direction: row;
+}
+
+.bore-center-finder-arrow-label.right {
+  right: 4%;
+  top: 50%;
+  transform: translateY(-50%);
+  flex-direction: row;
+}
+
+/* Diagram Crossfade Layers */
+.bore-center-diagram-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.bore-center-diagram-layer.active {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.bore-center-diagram-layer.inactive {
+  opacity: 0;
+  transform: scale(0.92);
+  pointer-events: none;
+}
+
+.bore-center-finder-arrow-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #60a5fa;
+  box-shadow: 0 0 6px #3b82f6;
+}
+
+.bore-center-finder-arrow-label.inward .bore-center-finder-arrow-dot {
+  background: #38bdf8;
+  box-shadow: 0 0 8px #0284c7;
+}
+
+.bore-center-finder-arrow-label.inward .bore-center-finder-arrow-text {
+  color: #38bdf8;
+}
+
+.bore-center-finder-arrow-label.inward .bore-center-finder-arrow-symbol {
+  color: #0ea5e9;
+  font-weight: 900;
+}
+
+/* Bore Diagram Specific Layer Adjustments */
+.bore-center-diagram-layer.bore-layer .bore-center-finder-arrow-label.top {
+  top: calc(50% - 165px);
+  bottom: auto;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.bore-center-diagram-layer.bore-layer .bore-center-finder-arrow-label.bottom {
+  top: calc(50% + 165px);
+  bottom: auto;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.bore-center-diagram-layer.bore-layer .bore-center-finder-arrow-label.left {
+  top: 50%;
+  bottom: auto;
+  left: 4%;
+  transform: translateY(-50%);
+}
+
+.bore-center-diagram-layer.bore-layer .bore-center-finder-arrow-label.right {
+  top: 50%;
+  bottom: auto;
+  right: 4%;
+  transform: translateY(-50%);
+}
+
+.bore-center-finder-diagram.mode-bore .bore-center-finder-diagram-line-h {
+  top: 50%;
+  left: 33%;
+  right: 33%;
+}
+
+.bore-center-finder-diagram.mode-bore .bore-center-finder-diagram-line-v {
+  top: calc(50% - 70px);
+  bottom: auto;
+  height: 140px;
+}
+
+/* Boss Diagram Specific Layer Adjustments */
+.bore-center-diagram-layer.boss-layer .bore-center-finder-arrow-label.top {
+  top: calc(40% - 165px);
+  bottom: auto;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.bore-center-diagram-layer.boss-layer .bore-center-finder-arrow-label.bottom {
+  top: calc(40% + 165px);
+  bottom: auto;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.bore-center-diagram-layer.boss-layer .bore-center-finder-arrow-label.left {
+  top: 40%;
+  bottom: auto;
+  left: 4%;
+  transform: translateY(-50%);
+}
+
+.bore-center-diagram-layer.boss-layer .bore-center-finder-arrow-label.right {
+  top: 40%;
+  bottom: auto;
+  right: 4%;
+  transform: translateY(-50%);
+}
+
+.bore-center-finder-diagram.mode-boss .bore-center-finder-diagram-line-h {
+  top: 40%;
+  left: 33%;
+  right: 33%;
+}
+
+.bore-center-finder-diagram.mode-boss .bore-center-finder-diagram-line-v {
+  top: calc(40% - 70px);
+  bottom: auto;
+  height: 140px;
+}
+
+/* Boss Z-Lift Bottom Bar inside diagram */
+.bore-center-boss-zlift-bar {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px 12px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  z-index: 10;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  animation: boreCenterFadeIn 0.25s ease;
+}
+
+@keyframes boreCenterFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.bore-center-boss-zlift-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bore-center-boss-zlift-input-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bore-center-boss-zlift-label {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.bore-center-boss-zlift-input {
+  width: 52px;
+  background: #090d16;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  padding: 3px 6px;
+  color: #38bdf8;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: right;
+  outline: none;
+}
+
+.bore-center-boss-zlift-input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 1px #38bdf8;
+}
+
+.bore-center-boss-zlift-unit {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.bore-center-boss-zlift-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  padding: 3px 6px;
+  border-radius: 4px;
+  line-height: 1.25;
+  transition: all 0.2s ease;
+}
+
+.bore-center-boss-zlift-note.active {
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.bore-center-boss-zlift-note.inactive {
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.05);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.bore-center-boss-zlift-note-icon {
+  font-size: 0.8rem;
+}
+
+.bore-center-finder-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: #e2e8f0;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+}
+
+.bore-center-finder-checkbox-label input[type="checkbox"] {
+  cursor: pointer;
+  width: 15px;
+  height: 15px;
+  accent-color: #2563eb;
+}
+
+.bore-center-finder-arrow-text {
+  color: #60a5fa;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.bore-center-finder-arrow-symbol {
+  color: #3b82f6;
+  font-size: 14px;
+}
+
+.bore-center-finder-form-panel {
+  flex: 0 0 270px;
+  max-width: 270px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bore-center-finder-form-group {
+  background: #141418;
+  border: 1px solid #272730;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bore-center-finder-form-group-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 6px;
+  margin-bottom: 2px;
+}
+
+.bore-center-finder-input-field {
+  margin-bottom: 0;
+}
+
+.bore-center-finder-input-label {
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.bore-center-finder-input-wrapper {
+  display: flex;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 6px 12px;
+  align-items: center;
+}
+
+.bore-center-finder-input-wrapper.disabled,
+.bore-center-finder-input-wrapper:has(:disabled) {
+  background: rgba(15, 23, 42, 0.5);
+  border-color: #1e293b;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.bore-center-finder-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+}
+
+.bore-center-finder-input::placeholder {
+  color: #6b7280;
+}
+
+.bore-center-finder-input:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.bore-center-finder-input-unit {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-left: 8px;
+  user-select: none;
+}
+
+.bore-center-finder-setting-note {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+.bore-center-finder-setting-note strong {
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.bore-center-finder-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #2d2d38;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #18181c;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.bore-center-finder-footer-left {
+  display: flex;
+  gap: 20px;
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+
+.bore-center-finder-running-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  color: #22c55e;
+}
+
+.bore-center-finder-running-dot {
+  width: 12px;
+  height: 12px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: bcf-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Connectivity Test Visual Indicator */
+.bore-center-finder-connectivity-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    user-select: none;
+}
+
+.bore-center-finder-connectivity-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    transition: all 0.25s ease-out;
+}
+
+.bore-center-finder-connectivity-dot.untested {
+    background: #f43f5e;
+    box-shadow: 0 0 10px rgba(244, 63, 94, 0.7);
+    animation: bcfProbePulseRed 1.3s infinite alternate;
+}
+
+.bore-center-finder-connectivity-dot.verified {
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.bore-center-finder-connectivity-dot.active {
+    background: #38bdf8;
+    box-shadow: 0 0 12px #38bdf8, 0 0 20px rgba(56, 189, 248, 0.8);
+    transform: scale(1.25);
+}
+
+.bore-center-finder-connectivity-text.untested {
+    color: #94a3b8;
+}
+
+.bore-center-finder-connectivity-text.verified {
+    color: #34d399;
+}
+
+.bore-center-finder-connectivity-text.active {
+    color: #38bdf8;
+    font-weight: 600;
+}
+
+@keyframes bcfProbePulseRed {
+    0% { transform: scale(0.9); opacity: 0.75; }
+    100% { transform: scale(1.15); opacity: 1; }
+}
+
+@keyframes bcf-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.bore-center-finder-footer-right {
+  display: flex;
+  gap: 12px;
+}
+
+.bore-center-finder-btn {
+  padding: 8px 20px;
+  color: #fff;
+  font-size: 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s;
+}
+
+.bore-center-finder-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.bore-center-finder-btn-run {
+  background: #2563eb;
+}
+
+.bore-center-finder-btn-run:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.bore-center-finder-btn-stop {
+  background: #dc2626;
+}
+
+.bore-center-finder-btn-stop:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.bore-center-finder-confirmation-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  z-index: 9999999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.bore-center-finder-confirmation-dialog {
+  background: #22272e;
+  color: #e1e4ea;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  max-width: 400px;
+  text-align: center;
+}
+
+.bore-center-finder-confirmation-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.bore-center-finder-confirmation-title.success {
+  color: #22c55e;
+}
+
+.bore-center-finder-confirmation-title.failed {
+  color: #f87171;
+}
+
+.bore-center-finder-confirmation-message {
+  font-size: 14px;
+  color: #d1d5db;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.bore-center-finder-confirmation-button {
+  padding: 10px 24px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bore-center-finder-confirmation-button:hover {
+  background: #1d4ed8;
+}

@@ -1,0 +1,1065 @@
+/* Edge & Corner Finder Modal Styles */
+
+.edge-corner-finder-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.edge-corner-finder-window-wrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: min(92vw, 920px);
+}
+
+.edge-corner-finder-window {
+    position: relative;
+    z-index: 2;
+    background: #1e1e24;
+    border: 1px solid #33333d;
+    border-radius: 12px;
+    overflow: hidden;
+    width: 100%;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    color: #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    animation: edgeCornerSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: height 0.35s cubic-bezier(0.4, 0, 0.2, 1), min-height 0.35s ease;
+}
+
+@keyframes edgeCornerSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.edge-corner-finder-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: #18181c;
+    border-bottom: 1px solid #2d2d38;
+}
+
+.edge-corner-finder-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #38bdf8;
+}
+
+.edge-corner-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.edge-corner-mode-toggle {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #090d16;
+    border: 1px solid #334155;
+    border-radius: 20px;
+    padding: 3px;
+    gap: 0;
+    user-select: none;
+    min-width: 256px;
+}
+
+.edge-corner-mode-slider {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    left: 3px;
+    width: calc((100% - 6px) / 2);
+    background: #38bdf8;
+    border-radius: 16px;
+    box-shadow: 0 1px 8px rgba(56, 189, 248, 0.45);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.edge-corner-mode-toggle.mode-inside .edge-corner-mode-slider {
+    transform: translateX(100%);
+}
+
+.edge-corner-mode-btn {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 5px 16px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 16px;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: color 0.25s ease;
+    white-space: nowrap;
+}
+
+.edge-corner-mode-btn:hover:not(:disabled):not(.active) {
+    color: #f1f5f9;
+}
+
+.edge-corner-mode-btn.active {
+    color: #030712;
+    font-weight: 700;
+}
+
+.edge-corner-mode-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.edge-corner-finder-close-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.edge-corner-finder-close-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.edge-corner-finder-close-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.edge-corner-finder-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Stylus Tip Calibration Banner */
+.edge-corner-finder-tip-banner {
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.82rem;
+    color: #cbd5e1;
+}
+
+.edge-corner-finder-tip-text {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.edge-corner-finder-tip-dismiss {
+    background: transparent;
+    border: none;
+    color: #38bdf8;
+    font-size: 0.76rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+
+.edge-corner-finder-tip-dismiss:hover {
+    background: rgba(56, 189, 248, 0.18);
+}
+
+.edge-corner-finder-body-grid {
+    display: grid;
+    grid-template-columns: 560px 1fr;
+    gap: 18px;
+    align-items: stretch;
+}
+
+@media (max-width: 860px) {
+    .edge-corner-finder-body-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.edge-corner-finder-diagram-panel {
+    background: #141418;
+    border: 1px solid #272730;
+    border-radius: 10px;
+    padding: 16px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    height: 480px;
+    min-height: 480px;
+    box-sizing: border-box;
+}
+
+.edge-corner-finder-diagram-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+}
+
+.edge-corner-finder-interactive-stage {
+    position: relative;
+    width: 530px;
+    height: 310px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 6px 0;
+}
+
+/* Central Block */
+.edge-corner-finder-stock-block {
+    width: 226px;
+    height: 140px;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border: 3px solid #334155;
+    border-radius: 8px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Inside Pocket Milled Cavity Style */
+.edge-corner-finder-stock-block.inside-mode {
+    background: radial-gradient(circle, #080e1a 0%, #030712 100%);
+    border-color: #334155;
+    box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.85);
+}
+
+/* Inside Cavity & Outside Layer Cross-Fade */
+.edge-corner-outside-layer,
+.edge-corner-inside-cavity {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.edge-corner-inside-cavity {
+    inset: 5px;
+    border: 2px dashed #475569;
+    border-radius: 6px;
+}
+
+.edge-corner-outside-layer.active,
+.edge-corner-inside-cavity.active {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+}
+
+.edge-corner-outside-layer.inactive,
+.edge-corner-inside-cavity.inactive {
+    opacity: 0;
+    transform: scale(0.96);
+    pointer-events: none;
+}
+
+.edge-corner-inside-label {
+    font-size: 0.70rem;
+    font-weight: 700;
+    color: #94a3b8;
+    background: rgba(15, 23, 42, 0.85);
+    padding: 2px 8px;
+    border-radius: 5px;
+    border: 1px solid rgba(51, 65, 85, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    user-select: none;
+    z-index: 5;
+    white-space: nowrap;
+}
+
+/* Directional Subtle Bounce Keyframes (Sync Clock via CSS Variables) */
+@keyframes insideBounceLeft {
+    0% { transform: translateY(-50%) translateX(0px) scale(var(--arrow-scale, 1)); }
+    100% { transform: translateY(-50%) translateX(calc(-1 * var(--arrow-bounce, 0px))) scale(var(--arrow-scale, 1)); }
+}
+@keyframes insideBounceRight {
+    0% { transform: translateY(-50%) translateX(0px) scale(var(--arrow-scale, 1)); }
+    100% { transform: translateY(-50%) translateX(var(--arrow-bounce, 0px)) scale(var(--arrow-scale, 1)); }
+}
+@keyframes insideBounceTop {
+    0% { transform: translateX(-50%) translateY(0px) scale(var(--arrow-scale, 1)); }
+    100% { transform: translateX(-50%) translateY(calc(-1 * var(--arrow-bounce, 0px))) scale(var(--arrow-scale, 1)); }
+}
+@keyframes insideBounceBottom {
+    0% { transform: translateX(-50%) translateY(0px) scale(var(--arrow-scale, 1)); }
+    100% { transform: translateX(-50%) translateY(var(--arrow-bounce, 0px)) scale(var(--arrow-scale, 1)); }
+}
+
+/* Inside Arrows (pointing outward toward cavity walls) with smooth fluid glide */
+.inside-arrow {
+    --arrow-bounce: 0px;
+    --arrow-scale: 1;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 12;
+    pointer-events: none;
+    filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.5));
+    opacity: 0.25;
+    transition: top 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                left 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                right 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                bottom 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.4s ease,
+                filter 0.4s ease;
+}
+
+.inside-arrow.active {
+    --arrow-bounce: 3px;
+    --arrow-scale: 1.15;
+    opacity: 1;
+    filter: drop-shadow(0 0 8px #38bdf8);
+}
+
+/* Inside Left Arrow */
+.inside-arrow.arrow-left {
+    left: 8px;
+    top: 50%;
+    animation: insideBounceLeft 1.4s infinite alternate ease-in-out;
+}
+.inside-arrow.arrow-left.corner-tl {
+    top: 36px;
+}
+.inside-arrow.arrow-left.corner-bl {
+    top: calc(100% - 36px);
+}
+
+/* Inside Right Arrow */
+.inside-arrow.arrow-right {
+    right: 8px;
+    top: 50%;
+    animation: insideBounceRight 1.4s infinite alternate ease-in-out;
+}
+.inside-arrow.arrow-right.corner-tr {
+    top: 36px;
+}
+.inside-arrow.arrow-right.corner-br {
+    top: calc(100% - 36px);
+}
+
+/* Inside Top Arrow */
+.inside-arrow.arrow-top {
+    top: 8px;
+    left: 50%;
+    animation: insideBounceTop 1.4s infinite alternate ease-in-out;
+}
+.inside-arrow.arrow-top.corner-tl {
+    left: 36px;
+}
+.inside-arrow.arrow-top.corner-tr {
+    left: calc(100% - 36px);
+}
+
+/* Inside Bottom Arrow */
+.inside-arrow.arrow-bottom {
+    bottom: 8px;
+    left: 50%;
+    animation: insideBounceBottom 1.4s infinite alternate ease-in-out;
+}
+.inside-arrow.arrow-bottom.corner-bl {
+    left: 36px;
+}
+.inside-arrow.arrow-bottom.corner-br {
+    left: calc(100% - 36px);
+}
+
+/* Edges glow when active */
+.edge-corner-finder-stock-block.edge-left-active {
+    border-left-color: #38bdf8;
+    box-shadow: -4px 0 14px rgba(56, 189, 248, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.5);
+}
+.edge-corner-finder-stock-block.edge-right-active {
+    border-right-color: #38bdf8;
+    box-shadow: 4px 0 14px rgba(56, 189, 248, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.5);
+}
+.edge-corner-finder-stock-block.edge-top-active {
+    border-top-color: #38bdf8;
+    box-shadow: 0 -4px 14px rgba(56, 189, 248, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.5);
+}
+.edge-corner-finder-stock-block.edge-bottom-active {
+    border-bottom-color: #38bdf8;
+    box-shadow: 0 4px 14px rgba(56, 189, 248, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Corner Intersection Glow: Dead-center on corner vertex */
+.edge-corner-finder-corner-marker {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #38bdf8;
+    box-shadow: 0 0 14px #38bdf8, 0 0 24px rgba(56, 189, 248, 0.6);
+    z-index: 20;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    transition: top 0.5s cubic-bezier(0.16, 1, 0.3, 1), left 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+}
+
+.edge-corner-finder-corner-marker.active {
+    opacity: 1;
+    animation: cornerPulse 1.4s infinite alternate;
+}
+
+.edge-corner-finder-corner-marker.inactive {
+    opacity: 0;
+    pointer-events: none;
+}
+
+@keyframes cornerPulse {
+    0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.8; }
+    100% { transform: translate(-50%, -50%) scale(1.18); opacity: 1; }
+}
+
+.edge-corner-finder-corner-marker.top-left {
+    top: 0;
+    left: 0;
+}
+.edge-corner-finder-corner-marker.top-right {
+    top: 0;
+    left: 100%;
+}
+.edge-corner-finder-corner-marker.bottom-left {
+    top: 100%;
+    left: 0;
+}
+.edge-corner-finder-corner-marker.bottom-right {
+    top: 100%;
+    left: 100%;
+}
+
+/* Outside Arrows Layer */
+.edge-corner-outside-arrows-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.edge-corner-outside-arrows-layer.active {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.edge-corner-outside-arrows-layer.inactive {
+    opacity: 0;
+    transform: scale(0.95);
+    pointer-events: none;
+}
+
+/* Outside Directional Subtle Bounce Keyframes (Sync Clock via CSS Variables) */
+@keyframes outsideBounceLeft {
+    0% { transform: translateY(-50%) translateX(0px) scale(var(--arrow-scale, 1)); }
+    100% { transform: translateY(-50%) translateX(var(--arrow-bounce, 0px)) scale(var(--arrow-scale, 1)); }
+}
+@keyframes outsideBounceRight {
+    0% { transform: translateY(-50%) translateX(0px) scale(var(--arrow-scale, 1)); }
+    100% { transform: translateY(-50%) translateX(calc(-1 * var(--arrow-bounce, 0px))) scale(var(--arrow-scale, 1)); }
+}
+@keyframes outsideBounceTop {
+    0% { transform: translateX(-50%) translateY(0px) scale(var(--arrow-scale, 1)); }
+    100% { transform: translateX(-50%) translateY(var(--arrow-bounce, 0px)) scale(var(--arrow-scale, 1)); }
+}
+@keyframes outsideBounceBottom {
+    0% { transform: translateX(-50%) translateY(0px) scale(var(--arrow-scale, 1)); }
+    100% { transform: translateX(-50%) translateY(calc(-1 * var(--arrow-bounce, 0px))) scale(var(--arrow-scale, 1)); }
+}
+
+/* Crisp Directional Arrows with Smooth Position & Glide Transitions */
+.edge-corner-finder-edge-arrow {
+    --arrow-bounce: 0px;
+    --arrow-scale: 1;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 12;
+    pointer-events: none;
+    filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.7));
+    transition: top 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                left 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.4s ease,
+                filter 0.4s ease;
+}
+
+.edge-corner-finder-edge-arrow.active {
+    --arrow-bounce: 3px;
+    --arrow-scale: 1.15;
+    opacity: 1;
+    filter: drop-shadow(0 0 8px #38bdf8);
+}
+
+.edge-corner-finder-edge-arrow.inactive {
+    --arrow-bounce: 0px;
+    --arrow-scale: 1;
+    opacity: 0.25;
+    filter: drop-shadow(0 0 3px rgba(56, 189, 248, 0.3));
+    pointer-events: none;
+}
+
+/* Outside Left Arrow */
+.edge-corner-finder-edge-arrow.arrow-left {
+    right: calc(100% + 12px);
+    top: 50%;
+    animation: outsideBounceLeft 1.4s infinite alternate ease-in-out;
+}
+.edge-corner-finder-edge-arrow.arrow-left.corner-tl {
+    top: 36px;
+}
+.edge-corner-finder-edge-arrow.arrow-left.corner-bl {
+    top: calc(100% - 36px);
+}
+
+/* Outside Right Arrow */
+.edge-corner-finder-edge-arrow.arrow-right {
+    left: calc(100% + 12px);
+    top: 50%;
+    animation: outsideBounceRight 1.4s infinite alternate ease-in-out;
+}
+.edge-corner-finder-edge-arrow.arrow-right.corner-tr {
+    top: 36px;
+}
+.edge-corner-finder-edge-arrow.arrow-right.corner-br {
+    top: calc(100% - 36px);
+}
+
+/* Outside Top Arrow */
+.edge-corner-finder-edge-arrow.arrow-top {
+    bottom: calc(100% + 12px);
+    left: 50%;
+    animation: outsideBounceTop 1.4s infinite alternate ease-in-out;
+}
+.edge-corner-finder-edge-arrow.arrow-top.corner-tl {
+    left: 36px;
+}
+.edge-corner-finder-edge-arrow.arrow-top.corner-tr {
+    left: calc(100% - 36px);
+}
+
+/* Outside Bottom Arrow */
+.edge-corner-finder-edge-arrow.arrow-bottom {
+    top: calc(100% + 12px);
+    left: 50%;
+    animation: outsideBounceBottom 1.4s infinite alternate ease-in-out;
+}
+.edge-corner-finder-edge-arrow.arrow-bottom.corner-bl {
+    left: 36px;
+}
+.edge-corner-finder-edge-arrow.arrow-bottom.corner-br {
+    left: calc(100% - 36px);
+}
+
+/* Edge Selectors (Clickable Checkbox buttons outside the block) */
+.edge-corner-finder-selector-btn {
+    position: absolute;
+    background: #1e293b;
+    border: 1px solid #475569;
+    color: #cbd5e1;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 5;
+    user-select: none;
+}
+
+.edge-corner-finder-selector-btn:hover:not(:disabled) {
+    background: #334155;
+    border-color: #64748b;
+    color: #ffffff;
+}
+
+.edge-corner-finder-selector-btn.selected {
+    background: #0284c7;
+    border-color: #38bdf8;
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.edge-corner-finder-selector-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    border-color: #334155;
+}
+
+.edge-corner-finder-selector-btn.top {
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.edge-corner-finder-selector-btn.bottom {
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.edge-corner-finder-selector-btn.left {
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.edge-corner-finder-selector-btn.right {
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Center Z Selector inside block */
+.edge-corner-finder-z-selector {
+    background: rgba(30, 41, 59, 0.85);
+    border: 1px solid #475569;
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #cbd5e1;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 6;
+    animation: edgeCornerFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.edge-corner-finder-z-selector:hover {
+    background: #334155;
+    color: #ffffff;
+}
+
+.edge-corner-finder-z-selector.selected {
+    background: #0284c7;
+    border-color: #38bdf8;
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+/* Dynamic Instruction Card */
+.edge-corner-finder-instruction-card {
+    background: #181820;
+    border: 1px solid #2f2f3d;
+    border-radius: 8px;
+    padding: 10px 14px;
+    width: 100%;
+    height: 94px;
+    min-height: 94px;
+    max-height: 94px;
+    box-sizing: border-box;
+    font-size: 0.8rem;
+    color: #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    text-align: left;
+    gap: 6px;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.edge-corner-finder-instruction-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-start;
+    text-align: left;
+    gap: 8px;
+    line-height: 1.35;
+    width: 100%;
+}
+
+.edge-corner-finder-instruction-label {
+    font-weight: 700;
+    color: #f1f5f9;
+    white-space: nowrap;
+    font-size: 0.78rem;
+}
+
+.edge-corner-finder-instruction-value {
+    color: #cbd5e1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    font-size: 0.8rem;
+}
+
+.edge-corner-finder-pill {
+    background: rgba(56, 189, 248, 0.14);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    color: #38bdf8;
+    padding: 1px 7px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.76rem;
+    white-space: nowrap;
+}
+
+.edge-corner-finder-pill-arrow {
+    color: #64748b;
+    font-size: 0.75rem;
+}
+
+/* Form Settings Panel */
+.edge-corner-finder-settings-panel,
+.edge-corner-finder-form-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 14px;
+    height: 100%;
+}
+
+.edge-corner-finder-form-group {
+    background: #141418;
+    border: 1px solid #272730;
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    flex: 1;
+}
+
+.edge-corner-finder-form-group-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #272730;
+    padding-bottom: 6px;
+}
+
+.edge-corner-finder-input-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.edge-corner-finder-input-label {
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    flex: 1;
+}
+
+.edge-corner-finder-input-wrapper {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 4px 8px;
+    width: 130px;
+    transition: border-color 0.15s;
+}
+
+.edge-corner-finder-input-wrapper:focus-within {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.edge-corner-finder-input-wrapper.disabled,
+.edge-corner-finder-input-wrapper:has(:disabled) {
+    background: rgba(15, 23, 42, 0.5);
+    border-color: #1e293b;
+    cursor: not-allowed;
+    opacity: 0.85;
+}
+
+.edge-corner-finder-input {
+    background: transparent;
+    border: none;
+    color: #f8fafc;
+    font-size: 0.9rem;
+    width: 100%;
+    outline: none;
+    text-align: right;
+    font-family: inherit;
+}
+
+.edge-corner-finder-input:disabled {
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.edge-corner-finder-input-unit {
+    color: #64748b;
+    font-size: 0.75rem;
+    margin-left: 6px;
+    user-select: none;
+}
+
+.edge-corner-finder-setting-note {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    padding: 5px 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.35;
+    margin-top: 2px;
+}
+
+.edge-corner-finder-setting-note strong {
+    color: #38bdf8;
+    font-weight: 600;
+}
+
+/* Footer */
+.edge-corner-finder-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: #18181c;
+    border-top: 1px solid #2d2d38;
+}
+
+.edge-corner-finder-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.edge-corner-finder-btn {
+    padding: 9px 18px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.edge-corner-finder-btn-secondary {
+    background: #2a2a35;
+    color: #cbd5e1;
+    border: 1px solid #3f3f4e;
+}
+
+.edge-corner-finder-btn-secondary:hover:not(:disabled) {
+    background: #363644;
+    color: #f1f5f9;
+}
+
+.edge-corner-finder-btn-primary {
+    background: #0284c7;
+    color: #ffffff;
+}
+
+.edge-corner-finder-btn-primary:hover:not(:disabled) {
+    background: #0369a1;
+}
+
+.edge-corner-finder-btn-primary:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.edge-corner-finder-btn-stop {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+.edge-corner-finder-btn-stop:hover {
+    background: #b91c1c;
+}
+
+.edge-corner-finder-running-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #38bdf8;
+}
+
+.edge-corner-finder-running-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #38bdf8;
+    animation: edgeCornerDotPulse 1s infinite alternate;
+}
+
+@keyframes edgeCornerDotPulse {
+    from { opacity: 0.4; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1.2); }
+}
+
+/* Connectivity Test Visual Indicator */
+.edge-corner-finder-connectivity-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    user-select: none;
+}
+
+.edge-corner-finder-connectivity-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    transition: all 0.25s ease-out;
+}
+
+.edge-corner-finder-connectivity-dot.untested {
+    background: #f43f5e;
+    box-shadow: 0 0 10px rgba(244, 63, 94, 0.7);
+    animation: probePulseRed 1.3s infinite alternate;
+}
+
+.edge-corner-finder-connectivity-dot.verified {
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.edge-corner-finder-connectivity-dot.active {
+    background: #38bdf8;
+    box-shadow: 0 0 12px #38bdf8, 0 0 20px rgba(56, 189, 248, 0.8);
+    transform: scale(1.25);
+}
+
+.edge-corner-finder-connectivity-text.untested {
+    color: #94a3b8;
+}
+
+.edge-corner-finder-connectivity-text.verified {
+    color: #34d399;
+}
+
+.edge-corner-finder-connectivity-text.active {
+    color: #38bdf8;
+    font-weight: 600;
+}
+
+@keyframes probePulseRed {
+    0% { transform: scale(0.9); opacity: 0.75; }
+    100% { transform: scale(1.15); opacity: 1; }
+}
+
+/* Success / Completion Confirmation Dialog */
+.edge-corner-finder-confirmation-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  z-index: 9999999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.edge-corner-finder-confirmation-dialog {
+  background: #22272e;
+  color: #e1e4ea;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  max-width: 400px;
+  text-align: center;
+}
+
+.edge-corner-finder-confirmation-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.edge-corner-finder-confirmation-title.success {
+  color: #22c55e;
+}
+
+.edge-corner-finder-confirmation-title.failed {
+  color: #f87171;
+}
+
+.edge-corner-finder-confirmation-message {
+  font-size: 14px;
+  color: #d1d5db;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.edge-corner-finder-confirmation-button {
+  padding: 10px 24px;
+  background: #0284c7;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.edge-corner-finder-confirmation-button:hover {
+  background: #0369a1;
+}

@@ -40,6 +40,7 @@ import {
 	SPINDLE_MODE,
 	THEMES,
 	WORKSPACE_MODE,
+} from "app/constants";
 import { LaserWizard } from "app/features/Config/components/wizards/LaserWizard.tsx";
 
 export const ACCESSORY_LABEL_OPTIONS = [

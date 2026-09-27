@@ -22,8 +22,25 @@ env:
   VITE_PUBLIC_POSTHOG_HOST: ${{ secrets.VITE_PUBLIC_POSTHOG_HOST }}
 
 jobs:
+  skip-check:
+    name: Check repository
+    runs-on: ubuntu-latest
+    outputs:
+      is-upstream: ${{ steps.check.outputs.is-upstream }}
+    steps:
+      - id: check
+        run: |
+          if [ "${{ github.repository_owner }}" = "Sienci-Labs" ]; then
+            echo "is-upstream=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is-upstream=false" >> "$GITHUB_OUTPUT"
+            echo "Fork detected (${{ github.repository_owner }}). Skipping build jobs."
+          fi
+
   build-linux:
     name: Build Linux packages
+    needs: skip-check
+    if: needs.skip-check.outputs.is-upstream == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -72,6 +89,8 @@ jobs:
 
   build-macos:
     name: Build macOS packages
+    needs: skip-check
+    if: needs.skip-check.outputs.is-upstream == 'true'
     runs-on: macos-latest
     env:
       GH_TOKEN: ${{ secrets.CI_TOKEN || secrets.GITHUB_TOKEN }}
@@ -136,6 +155,8 @@ jobs:
 
   build-windows:
     name: Build Windows packages
+    needs: skip-check
+    if: needs.skip-check.outputs.is-upstream == 'true'
     runs-on: windows-latest
     permissions:
       contents: write
@@ -246,6 +267,8 @@ jobs:
           retention-days: 2
   build-pi:
     name: Build Raspberry PI packages
+    needs: skip-check
+    if: needs.skip-check.outputs.is-upstream == 'true'
     runs-on: ubuntu-latest
     continue-on-error: true
     env:

@@ -35,8 +35,9 @@ const getMachineMovementLimits = (pullOff: number): number[] => {
     const settings = get(store, 'controller.settings.settings');
     const { $130: xMax, $131: yMax } = settings;
 
-    const xLimit = (Number(xMax) - pullOff).toFixed(3);
-    const yLimit = (Number(yMax) - pullOff).toFixed(3);
+    const effectivePullOff = Math.max(Number(pullOff), 2);
+    const xLimit = (Number(xMax) - effectivePullOff).toFixed(3);
+    const yLimit = (Number(yMax) - effectivePullOff).toFixed(3);
 
     return [Number(xLimit), Number(yLimit)];
 };
@@ -54,6 +55,7 @@ const getPositionMovements = (
     homingFlag: boolean,
     pullOff: number,
 ) => {
+    const safePullOff = Math.max(Number(pullOff), 2);
     const [xLimit, yLimit] = getMachineMovementLimits(pullOff);
     // If homing flag not set, we treat all movements as negative space
     if (!homingFlag) {
@@ -70,47 +72,47 @@ const getPositionMovements = (
 
     if (homingPosition === FRONT_RIGHT) {
         if (requestedPosition === FRONT_RIGHT) {
-            return [pullOff * -1, pullOff];
+            return [safePullOff * -1, safePullOff];
         } else if (requestedPosition === FRONT_LEFT) {
-            return [xLimit * -1, pullOff];
+            return [xLimit * -1, safePullOff];
         } else if (requestedPosition === BACK_LEFT) {
             return [xLimit * -1, yLimit];
         } else {
             // Back Right
-            return [pullOff * -1, yLimit];
+            return [safePullOff * -1, yLimit];
         }
     } else if (homingPosition === FRONT_LEFT) {
         if (requestedPosition === FRONT_RIGHT) {
-            return [xLimit, pullOff];
+            return [xLimit, safePullOff];
         } else if (requestedPosition === FRONT_LEFT) {
-            return [pullOff, pullOff];
+            return [safePullOff, safePullOff];
         } else if (requestedPosition === BACK_RIGHT) {
             return [xLimit, yLimit];
         } else {
             // Back Right
-            return [pullOff, yLimit];
+            return [safePullOff, yLimit];
         }
     } else if (homingPosition === BACK_LEFT) {
         if (requestedPosition === FRONT_RIGHT) {
             return [xLimit, yLimit * -1];
         } else if (requestedPosition === FRONT_LEFT) {
-            return [pullOff, yLimit * -1];
+            return [safePullOff, yLimit * -1];
         } else if (requestedPosition === BACK_LEFT) {
-            return [pullOff, pullOff * -1];
+            return [safePullOff, safePullOff * -1];
         } else {
             // Back Right
-            return [xLimit, pullOff * -1];
+            return [xLimit, safePullOff * -1];
         }
     } else if (homingPosition === BACK_RIGHT) {
         if (requestedPosition === FRONT_RIGHT) {
-            return [pullOff * -1, yLimit * -1];
+            return [safePullOff * -1, yLimit * -1];
         } else if (requestedPosition === FRONT_LEFT) {
             return [xLimit * -1, yLimit * -1];
         } else if (requestedPosition === BACK_LEFT) {
-            return [xLimit * -1, pullOff * -1];
+            return [xLimit * -1, safePullOff * -1];
         } else {
             // Back Right
-            return [pullOff * -1, pullOff * -1];
+            return [safePullOff * -1, safePullOff * -1];
         }
     }
 

@@ -124,12 +124,12 @@ describe('getMovementGCode - XY corner movement (unaffected by the Z-retract fix
 
     it('moves to the pull-off offset for the corner matching the home position', () => {
         const gcode = getMovementGCode(BACK_RIGHT, '0', true, 1); // setting 0 = BACK_RIGHT
-        expect(gcode[1]).toBe('G53 G21 G0 X-1 Y-1');
+        expect(gcode[1]).toBe('G53 G21 G0 X-2 Y-2');
     });
 
     it('moves to the far machine limit for the opposite corner', () => {
         const gcode = getMovementGCode(FRONT_LEFT, '0', true, 1);
-        expect(gcode[1]).toBe('G53 G21 G0 X-299 Y-199');
+        expect(gcode[1]).toBe('G53 G21 G0 X-298 Y-198');
     });
 
     it('treats homingFlag=false as unhomed and always computes from BACK_RIGHT', () => {

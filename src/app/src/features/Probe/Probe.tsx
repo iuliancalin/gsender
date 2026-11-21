@@ -334,7 +334,10 @@ const Probe = ({ state, actions }: ProbeProps) => {
                     {touchplateTypeSwitcher && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button aria-label="Change Probe Type" size="sm">
+                                <Button
+                                    aria-label="Change Probe Type"
+                                    size="sm"
+                                >
                                     {touchplateType}
                                 </Button>
                             </DropdownMenuTrigger>
@@ -342,7 +345,9 @@ const Probe = ({ state, actions }: ProbeProps) => {
                                 {Object.values(TOUCHPLATE_TYPES).map((tpt) => (
                                     <DropdownMenuItem
                                         key={tpt}
-                                        onClick={() => actions.changeTouchPlateType(tpt)}
+                                        onClick={() =>
+                                            actions.changeTouchPlateType(tpt)
+                                        }
                                         className="flex items-center hover:bg-blue-100 transition-colors duration-200 cursor-pointer dark:hover:bg-dark-lighter"
                                     >
                                         {tpt}
@@ -364,7 +369,9 @@ const Probe = ({ state, actions }: ProbeProps) => {
                                     }
                                     size="icon"
                                     aria-label={`Select probing routine ${command.id}`}
-                                    aria-pressed={index === selectedProbeCommand}
+                                    aria-pressed={
+                                        index === selectedProbeCommand
+                                    }
                                     className={cx(
                                         'rounded-md relative h-[calc(4vh+3px)]',
                                         {
